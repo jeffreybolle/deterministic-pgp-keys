@@ -1,0 +1,14 @@
+[package]
+name = "deterministic-pgp-keys"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jeffrey Bolle"]
+
+[dependencies]
+pgp = { git = "https://github.com/jeffreybolle/rpgp", rev = "09c274ba83cfa2dcd577e7e05226fa9615168857" }
+smallvec = "1.9.0"
+rand = "0.8.5"
+bip39 = "1.0.1"
+chrono = "0.4.22"
+clap = { version = "3.2.22", features = ["derive"] }
+anyhow = "1.0.65"
