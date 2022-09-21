@@ -9,7 +9,9 @@ use rand::{thread_rng, RngCore, SeedableRng};
 use smallvec::*;
 use std::fs::File;
 use std::io::Write;
+use std::process::exit;
 use std::str::FromStr;
+use clap::CommandFactory;
 
 /// Program to create deterministic PGP keys
 #[derive(Parser, Debug)]
@@ -51,9 +53,10 @@ fn pad(s: &str, length: usize) -> String {
 fn read_mnemonic() -> Result<Mnemonic, anyhow::Error> {
     let mut words = String::new();
     let mut stdout = std::io::stdout();
-    write!(stdout, "mnemonic: ")?;
+    write!(stdout, "Seed Phrase: ")?;
     stdout.flush()?;
     std::io::stdin().read_line(&mut words)?;
+    println!();
     Ok(Mnemonic::from_str(words.trim())?)
 }
 
@@ -177,6 +180,15 @@ fn generate_keys(
 
 fn main() -> Result<(), anyhow::Error> {
     let args = Args::parse();
+
+    if args.private_key.is_none() && args.public_key.is_none() {
+        let mut cmd = Args::command();
+        cmd.print_help()?;
+        println!();
+        println!("Please specify either --private-key, --public-key or both.");
+        exit(1);
+    }
+
     let mnemonic = if args.generate {
         generate_mnemonic(&args)?
     } else {
@@ -199,14 +211,16 @@ fn main() -> Result<(), anyhow::Error> {
 
     let public_key = secret_key.signed_public_key()?;
 
-    if let Some(public_key_file) = args.public_key {
-        let mut file = File::create(public_key_file)?;
-        public_key.to_armored_writer(&mut file, None)?;
+    if let Some(private_key_file) = args.private_key {
+        let mut file = File::create(private_key_file.clone())?;
+        secret_key.to_armored_writer(&mut file, None)?;
+        println!("written: {}", private_key_file);
     }
 
-    if let Some(private_key_file) = args.private_key {
-        let mut file = File::create(private_key_file)?;
-        secret_key.to_armored_writer(&mut file, None)?;
+    if let Some(public_key_file) = args.public_key {
+        let mut file = File::create(public_key_file.clone())?;
+        public_key.to_armored_writer(&mut file, None)?;
+        println!("written: {}", public_key_file);
     }
 
     Ok(())
