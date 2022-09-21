@@ -5,7 +5,7 @@ Example generate a new seed phrase:
 ```bash
 $ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
                            --email 'jeffreybolle@gmail.com' \
-                           --date 2022-09-21 \
+                           --date '2022-09-21' \
                            --public-key public.asc \
                            --private-key private.asc \
                            --generate
@@ -37,7 +37,7 @@ Recover a key from an existing seed phrase:
 ```bash
 $ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
                            --email 'jeffreybolle@gmail.com' \
-                           --date 2022-09-21 \
+                           --date '2022-09-21' \
                            --public-key public.asc \
                            --private-key private.asc
 
