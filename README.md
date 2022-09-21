@@ -32,7 +32,7 @@ sub   rsa4096 2022-09-21 [E]
 sub   rsa4096 2022-09-21 [A]
 ```
 
-Recover a key from an existing seed phrase.
+Recover a key from an existing seed phrase:
 
 ```bash
 $ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
