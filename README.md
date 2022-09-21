@@ -1,7 +1,7 @@
 # Deterministic PGP Keys
 Generate PGP keys from a 12 word seed phrase
 
-Example generate a new key:
+Example generate a new seed phrase:
 ```bash
 $ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
                            --email 'jeffreybolle@gmail.com' \
@@ -32,7 +32,7 @@ sub   rsa4096 2022-09-21 [E]
 sub   rsa4096 2022-09-21 [A]
 ```
 
-Recover an existing key.
+Recover a key from an existing seed phrase.
 
 ```bash
 $ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
