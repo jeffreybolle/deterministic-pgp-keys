@@ -96,9 +96,10 @@ fn print_mnemonic(mnemonic: &Mnemonic, args: &Args) {
 fn read_passphrase() -> Result<String, anyhow::Error> {
     let mut passphrase = String::new();
     let mut stdout = std::io::stdout();
-    write!(stdout, "passphrase: ")?;
+    write!(stdout, "Passphrase: ")?;
     stdout.flush()?;
     std::io::stdin().read_line(&mut passphrase)?;
+    println!();
     Ok(passphrase.trim().to_string())
 }
 
