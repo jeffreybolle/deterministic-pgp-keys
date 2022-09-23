@@ -412,6 +412,7 @@ dependencies = [
  "clap",
  "pgp",
  "rand 0.8.5",
+ "rpassword",
  "sha2 0.10.6",
  "smallvec 1.9.0",
 ]
@@ -937,6 +938,16 @@ dependencies = [
  "block-buffer 0.9.0",
  "digest 0.9.0",
  "opaque-debug",
+]
+
+[[package]]
+name = "rpassword"
+version = "7.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26b763cb66df1c928432cc35053f8bd4cec3335d8559fc16010017d16b3c1680"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]

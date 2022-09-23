@@ -13,3 +13,4 @@ chrono = "0.4.22"
 clap = { version = "3.2.22", features = ["derive"] }
 anyhow = "1.0.65"
 sha2 = "0.10.6"
+rpassword = "7.0"

@@ -90,14 +90,12 @@ fn print_mnemonic(mnemonic: &Mnemonic, args: &Args) {
     } else {
         println!("  {}", words.join(" "));
     }
+
+    println!();
 }
 
 fn read_passphrase() -> Result<String, anyhow::Error> {
-    let mut passphrase = String::new();
-    let mut stdout = std::io::stdout();
-    write!(stdout, "Passphrase: ")?;
-    stdout.flush()?;
-    std::io::stdin().read_line(&mut passphrase)?;
+    let passphrase = rpassword::prompt_password("Passphrase: ")?;
     Ok(passphrase.trim().to_string())
 }
 
