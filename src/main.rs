@@ -6,7 +6,7 @@ use pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
 use pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
 use pgp::types::CompressionAlgorithm;
 use pgp::{SignedSecretKey, SubkeyParamsBuilder};
-use rand::{thread_rng, RngCore, SeedableRng};
+use rand::{thread_rng, CryptoRng, Rng, RngCore, SeedableRng};
 use sha2::{Digest, Sha256};
 use smallvec::*;
 use std::fs::File;
@@ -99,6 +99,22 @@ fn read_passphrase() -> Result<String, anyhow::Error> {
     Ok(passphrase.trim().to_string())
 }
 
+fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(b"DERIVE");
+    hasher.update(&master_seed);
+    hasher.update(format!("/{}", index).as_bytes());
+    let digest = hasher.finalize();
+
+    let mut seed = [0u8; 32];
+    seed[..32].copy_from_slice(&digest[..32]);
+    seed
+}
+
+fn new_rng(seed: [u8; 32]) -> impl Rng + CryptoRng {
+    rand_chacha::ChaCha20Rng::from_seed(seed)
+}
+
 fn generate_keys(
     mnemonic: Mnemonic,
     name: String,
@@ -118,7 +134,7 @@ fn generate_keys(
     let mut key_material = Vec::new();
 
     for index in 1..=4 {
-        let mut rng = rand::rngs::StdRng::from_seed(derive_rng_seed(&master_seed, index));
+        let mut rng = new_rng(derive_rng_seed(&master_seed, index));
         key_material.push(Some(
             KeyType::Rsa(4096).generate_with_rng(&mut rng, passphrase.clone())?,
         ));
@@ -179,23 +195,11 @@ fn generate_keys(
         .build()
         .map_err(anyhow::Error::msg)?;
 
-    let mut rng = rand::rngs::StdRng::from_seed(derive_rng_seed(&master_seed, 5));
+    let mut rng = new_rng(derive_rng_seed(&master_seed, 5));
     let secret_key = secret_key_params.generate_with_rng(&mut rng)?;
     let signed_secret_key = secret_key.sign(passwd_fn, created_time)?;
 
     Ok(signed_secret_key)
-}
-
-fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    hasher.update(b"DERIVE");
-    hasher.update(&master_seed);
-    hasher.update(format!("/{}", index).as_bytes());
-    let digest = hasher.finalize();
-
-    let mut seed = [0u8; 32];
-    seed[..32].copy_from_slice(&digest[..32]);
-    seed
 }
 
 fn main() -> Result<(), anyhow::Error> {
