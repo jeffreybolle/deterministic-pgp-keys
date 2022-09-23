@@ -1,17 +1,18 @@
 use bip39::{Language, Mnemonic};
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
+use clap::CommandFactory;
 use clap::Parser;
 use pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
 use pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
 use pgp::types::CompressionAlgorithm;
 use pgp::{SignedSecretKey, SubkeyParamsBuilder};
 use rand::{thread_rng, RngCore, SeedableRng};
+use sha2::{Digest, Sha256};
 use smallvec::*;
 use std::fs::File;
 use std::io::Write;
 use std::process::exit;
 use std::str::FromStr;
-use clap::CommandFactory;
 
 /// Program to create deterministic PGP keys
 #[derive(Parser, Debug)]
@@ -36,7 +37,7 @@ struct Args {
     public_key: Option<String>,
 
     #[clap(long)]
-    plain_mnemonic: bool,
+    plain_seed_phrase: bool,
 
     #[clap(long)]
     passphrase: bool,
@@ -56,7 +57,6 @@ fn read_mnemonic() -> Result<Mnemonic, anyhow::Error> {
     write!(stdout, "Seed Phrase: ")?;
     stdout.flush()?;
     std::io::stdin().read_line(&mut words)?;
-    println!();
     Ok(Mnemonic::from_str(words.trim())?)
 }
 
@@ -76,7 +76,7 @@ fn print_mnemonic(mnemonic: &Mnemonic, args: &Args) {
     println!("Seed Phrase:");
     println!();
 
-    if !args.plain_mnemonic {
+    if !args.plain_seed_phrase {
         let length = mnemonic.word_iter().map(str::len).max().unwrap();
         for i in 0..6 {
             println!(
@@ -90,7 +90,6 @@ fn print_mnemonic(mnemonic: &Mnemonic, args: &Args) {
     } else {
         println!("  {}", words.join(" "));
     }
-    println!();
 }
 
 fn read_passphrase() -> Result<String, anyhow::Error> {
@@ -99,7 +98,6 @@ fn read_passphrase() -> Result<String, anyhow::Error> {
     write!(stdout, "Passphrase: ")?;
     stdout.flush()?;
     std::io::stdin().read_line(&mut passphrase)?;
-    println!();
     Ok(passphrase.trim().to_string())
 }
 
@@ -119,6 +117,15 @@ fn generate_keys(
         move || passphrase.clone()
     };
 
+    let mut key_material = Vec::new();
+
+    for index in 1..=4 {
+        let mut rng = rand::rngs::StdRng::from_seed(derive_rng_seed(&master_seed, index));
+        key_material.push(Some(
+            KeyType::Rsa(4096).generate_with_rng(&mut rng, passphrase.clone())?,
+        ));
+    }
+
     let secret_key_params = SecretKeyParamsBuilder::default()
         .key_type(KeyType::Rsa(4096))
         .can_create_certificates(true)
@@ -134,6 +141,7 @@ fn generate_keys(
         ])
         .preferred_compression_algorithms(smallvec![CompressionAlgorithm::ZLIB,])
         .created_at(created_time)
+        .key_material(key_material[0].take())
         .passphrase(passphrase.clone())
         .subkeys(vec![
             SubkeyParamsBuilder::default()
@@ -143,6 +151,7 @@ fn generate_keys(
                 .can_authenticate(false)
                 .key_type(KeyType::Rsa(4096))
                 .created_at(created_time.clone())
+                .key_material(key_material[1].take())
                 .passphrase(passphrase.clone())
                 .build()
                 .map_err(|err| anyhow::Error::msg(err))?,
@@ -153,6 +162,7 @@ fn generate_keys(
                 .can_authenticate(false)
                 .key_type(KeyType::Rsa(4096))
                 .created_at(created_time.clone())
+                .key_material(key_material[2].take())
                 .passphrase(passphrase.clone())
                 .build()
                 .map_err(|err| anyhow::Error::msg(err))?,
@@ -163,6 +173,7 @@ fn generate_keys(
                 .can_authenticate(true)
                 .key_type(KeyType::Rsa(4096))
                 .created_at(created_time.clone())
+                .key_material(key_material[3].take())
                 .passphrase(passphrase)
                 .build()
                 .map_err(|err| anyhow::Error::msg(err))?,
@@ -170,13 +181,23 @@ fn generate_keys(
         .build()
         .map_err(|err| anyhow::Error::msg(err))?;
 
-    let mut seed: <rand::rngs::StdRng as SeedableRng>::Seed = [0u8; 32];
-    seed[..32].copy_from_slice(&master_seed[..32]);
-    let mut rng = rand::rngs::StdRng::from_seed(seed);
+    let mut rng = rand::rngs::StdRng::from_seed(derive_rng_seed(&master_seed, 5));
     let secret_key = secret_key_params.generate_with_rng(&mut rng)?;
     let signed_secret_key = secret_key.sign(passwd_fn)?;
 
     Ok(signed_secret_key)
+}
+
+fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(b"DERIVE");
+    hasher.update(&master_seed);
+    hasher.update(format!("/{}", index).as_bytes());
+    let digest = hasher.finalize();
+
+    let mut seed = [0u8; 32];
+    seed[..32].copy_from_slice(&digest[..32]);
+    seed
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -201,6 +222,8 @@ fn main() -> Result<(), anyhow::Error> {
     } else {
         None
     };
+
+    println!();
 
     let secret_key = generate_keys(
         mnemonic,
