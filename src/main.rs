@@ -51,7 +51,7 @@ fn pad(s: &str, length: usize) -> String {
     s
 }
 
-fn read_mnemonic() -> Result<Mnemonic, anyhow::Error> {
+fn read_seed_phrase() -> Result<Mnemonic, anyhow::Error> {
     let mut words = String::new();
     let mut stdout = std::io::stdout();
     write!(stdout, "Seed Phrase: ")?;
@@ -60,7 +60,7 @@ fn read_mnemonic() -> Result<Mnemonic, anyhow::Error> {
     Ok(Mnemonic::from_str(words.trim())?)
 }
 
-fn generate_mnemonic(args: &Args) -> Result<Mnemonic, anyhow::Error> {
+fn generate_seed_phrase(args: &Args) -> Result<Mnemonic, anyhow::Error> {
     let mut rng = thread_rng();
     let mut entropy = [0u8; 16];
     rng.fill_bytes(&mut entropy);
@@ -212,9 +212,9 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     let mnemonic = if args.generate {
-        generate_mnemonic(&args)?
+        generate_seed_phrase(&args)?
     } else {
-        read_mnemonic()?
+        read_seed_phrase()?
     };
 
     let passphrase = if args.passphrase {
