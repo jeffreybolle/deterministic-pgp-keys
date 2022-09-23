@@ -150,40 +150,40 @@ fn generate_keys(
                 .can_encrypt(false)
                 .can_authenticate(false)
                 .key_type(KeyType::Rsa(4096))
-                .created_at(created_time.clone())
+                .created_at(created_time)
                 .key_material(key_material[1].take())
                 .passphrase(passphrase.clone())
                 .build()
-                .map_err(|err| anyhow::Error::msg(err))?,
+                .map_err(anyhow::Error::msg)?,
             SubkeyParamsBuilder::default()
                 .can_create_certificates(false)
                 .can_sign(false)
                 .can_encrypt(true)
                 .can_authenticate(false)
                 .key_type(KeyType::Rsa(4096))
-                .created_at(created_time.clone())
+                .created_at(created_time)
                 .key_material(key_material[2].take())
                 .passphrase(passphrase.clone())
                 .build()
-                .map_err(|err| anyhow::Error::msg(err))?,
+                .map_err(anyhow::Error::msg)?,
             SubkeyParamsBuilder::default()
                 .can_create_certificates(false)
                 .can_sign(false)
                 .can_encrypt(false)
                 .can_authenticate(true)
                 .key_type(KeyType::Rsa(4096))
-                .created_at(created_time.clone())
+                .created_at(created_time)
                 .key_material(key_material[3].take())
                 .passphrase(passphrase)
                 .build()
-                .map_err(|err| anyhow::Error::msg(err))?,
+                .map_err(anyhow::Error::msg)?,
         ])
         .build()
-        .map_err(|err| anyhow::Error::msg(err))?;
+        .map_err(anyhow::Error::msg)?;
 
     let mut rng = rand::rngs::StdRng::from_seed(derive_rng_seed(&master_seed, 5));
     let secret_key = secret_key_params.generate_with_rng(&mut rng)?;
-    let signed_secret_key = secret_key.sign(passwd_fn)?;
+    let signed_secret_key = secret_key.sign(passwd_fn, created_time)?;
 
     Ok(signed_secret_key)
 }
