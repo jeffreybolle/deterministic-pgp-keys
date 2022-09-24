@@ -30,6 +30,10 @@ uid                      Jeffrey Bolle <jeffreybolle@gmail.com>
 sub   rsa4096 2022-09-21 [S]
 sub   rsa4096 2022-09-21 [E]
 sub   rsa4096 2022-09-21 [A]
+
+$ sha256sum public.asc private.asc
+0b1ac7e12a50f1a7aac6f3bbeba195590716f6cc183fefec08c8af07e185e0f6  public.asc
+e45c1fd43f5e28d4f32a49d94bedcd76351ab812b564d1315a7e391c166e5b5a  private.asc
 ```
 
 Recover a key from an existing seed phrase:
@@ -54,4 +58,8 @@ uid                      Jeffrey Bolle <jeffreybolle@gmail.com>
 sub   rsa4096 2022-09-21 [S]
 sub   rsa4096 2022-09-21 [E]
 sub   rsa4096 2022-09-21 [A]
+
+$ sha256sum public.asc private.asc
+0b1ac7e12a50f1a7aac6f3bbeba195590716f6cc183fefec08c8af07e185e0f6  public.asc
+e45c1fd43f5e28d4f32a49d94bedcd76351ab812b564d1315a7e391c166e5b5a  private.asc
 ```
