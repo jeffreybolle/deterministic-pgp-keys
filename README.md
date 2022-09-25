@@ -22,18 +22,19 @@ Seed Phrase:
 written: private.asc
 written: public.asc
 
-$ gpg --show-key public.asc
+$ gpg --keyid-format long --show-key public.asc
 
-pub   rsa4096 2022-09-21 [C]
-      96453E87B0C25A2B3E2162A441D7DC5E6E39C8A6
-uid                      Jeffrey Bolle <jeffreybolle@gmail.com>
-sub   rsa4096 2022-09-21 [S]
-sub   rsa4096 2022-09-21 [E]
-sub   rsa4096 2022-09-21 [A]
+pub   rsa4096/3C0477EBC839A4EB 2022-09-21 [C]
+      40D5580A0D4C2E966A57CA643C0477EBC839A4EB
+uid                            Jeffrey Bolle <jeffreybolle@gmail.com>
+sub   rsa4096/1ADED7E832E44A9C 2022-09-21 [S]
+sub   rsa4096/65C64F42070EDC53 2022-09-21 [E]
+sub   rsa4096/17CB25180FCA8973 2022-09-21 [A]
 
 $ sha256sum public.asc private.asc
-0b1ac7e12a50f1a7aac6f3bbeba195590716f6cc183fefec08c8af07e185e0f6  public.asc
-e45c1fd43f5e28d4f32a49d94bedcd76351ab812b564d1315a7e391c166e5b5a  private.asc
+
+8074ddb524121edc31a1c6ce616ba37ac71412999802be804f252b33259fa0bc  public.asc
+64c44c971ae50ddd3a30c516e5249e736e883b1d7aec018e041b1e0b63a45962  private.asc
 ```
 
 Recover a key from an existing seed phrase:
@@ -50,16 +51,17 @@ Seed Phrase: design car dutch struggle hello pluck bubble hospital muffin earn h
 written: private.asc
 written: public.asc
 
-$ gpg --show-key public.asc
+$ gpg --keyid-format long --show-key public.asc
 
-pub   rsa4096 2022-09-21 [C]
-      96453E87B0C25A2B3E2162A441D7DC5E6E39C8A6
-uid                      Jeffrey Bolle <jeffreybolle@gmail.com>
-sub   rsa4096 2022-09-21 [S]
-sub   rsa4096 2022-09-21 [E]
-sub   rsa4096 2022-09-21 [A]
+pub   rsa4096/3C0477EBC839A4EB 2022-09-21 [C]
+      40D5580A0D4C2E966A57CA643C0477EBC839A4EB
+uid                            Jeffrey Bolle <jeffreybolle@gmail.com>
+sub   rsa4096/1ADED7E832E44A9C 2022-09-21 [S]
+sub   rsa4096/65C64F42070EDC53 2022-09-21 [E]
+sub   rsa4096/17CB25180FCA8973 2022-09-21 [A]
 
 $ sha256sum public.asc private.asc
-0b1ac7e12a50f1a7aac6f3bbeba195590716f6cc183fefec08c8af07e185e0f6  public.asc
-e45c1fd43f5e28d4f32a49d94bedcd76351ab812b564d1315a7e391c166e5b5a  private.asc
+
+8074ddb524121edc31a1c6ce616ba37ac71412999802be804f252b33259fa0bc  public.asc
+64c44c971ae50ddd3a30c516e5249e736e883b1d7aec018e041b1e0b63a45962  private.asc
 ```
