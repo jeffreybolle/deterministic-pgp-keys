@@ -1,11 +1,11 @@
+use crate::pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
+use crate::pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
+use crate::pgp::types::CompressionAlgorithm;
+use crate::pgp::{SignedSecretKey, SubkeyParamsBuilder};
 use bip39::{Language, Mnemonic};
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use clap::CommandFactory;
 use clap::Parser;
-use pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
-use pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
-use pgp::types::CompressionAlgorithm;
-use pgp::{SignedSecretKey, SubkeyParamsBuilder};
 use rand::{thread_rng, CryptoRng, Rng, RngCore, SeedableRng};
 use sha2::{Digest, Sha256};
 use smallvec::*;
@@ -13,6 +13,23 @@ use std::fs::File;
 use std::io::Write;
 use std::process::exit;
 use std::str::FromStr;
+
+#[macro_use]
+extern crate nom;
+#[macro_use]
+extern crate num_derive;
+#[macro_use]
+extern crate generic_array;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate derive_builder;
+#[macro_use]
+extern crate bitfield;
+#[macro_use]
+extern crate smallvec;
+
+mod pgp;
 
 /// Program to create deterministic PGP keys
 #[derive(Parser, Debug)]

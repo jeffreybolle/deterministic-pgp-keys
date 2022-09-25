@@ -1,6 +1,8 @@
 # Deterministic PGP Keys
 Generate PGP keys from a 12 word seed phrase
 
+## Examples
+
 Example generate a new seed phrase:
 ```bash
 $ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
@@ -65,3 +67,11 @@ $ sha256sum public.asc private.asc
 8074ddb524121edc31a1c6ce616ba37ac71412999802be804f252b33259fa0bc  public.asc
 64c44c971ae50ddd3a30c516e5249e736e883b1d7aec018e041b1e0b63a45962  private.asc
 ```
+
+## Acknowledgements
+
+The majority of the code under the `pgp` module was copied from [pgp](https://github.com/rpgp/rpgp) crate and modified
+for the purposes of this project.
+
+## LICENSE
+MIT or Apache 2.0
