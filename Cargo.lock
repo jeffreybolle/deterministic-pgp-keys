@@ -741,7 +741,7 @@ dependencies = [
 [[package]]
 name = "pgp"
 version = "0.8.0"
-source = "git+https://github.com/jeffreybolle/rpgp?rev=6a5402464319cd87c2a470b3e063dd03475ad223#6a5402464319cd87c2a470b3e063dd03475ad223"
+source = "git+https://github.com/jeffreybolle/rpgp?rev=0a0e98307e6a4fc45950e37a451a35796f2cc021#0a0e98307e6a4fc45950e37a451a35796f2cc021"
 dependencies = [
  "aes",
  "base64",

@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Jeffrey Bolle"]
 
 [dependencies]
-pgp = { git = "https://github.com/jeffreybolle/rpgp", rev = "6a5402464319cd87c2a470b3e063dd03475ad223" }
+pgp = { git = "https://github.com/jeffreybolle/rpgp", rev = "0a0e98307e6a4fc45950e37a451a35796f2cc021" }
 smallvec = "1.9.0"
 rand = "0.8.5"
 bip39 = "1.0.1"
