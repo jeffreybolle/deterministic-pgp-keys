@@ -6,6 +6,7 @@ authors = ["Jeffrey Bolle <jeffreybolle@gmail.com"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/jeffreybolle/deterministic-pgp-keys"
+description = "Generate PGP keys from a 12 word seed phrase"
 
 [dependencies]
 rand = "0.8"
