@@ -225,6 +225,7 @@ mod tests {
         }
     }
 
+    #[ignore]
     #[test]
     fn test_many_parser() {
         // use pretty_env_logger;

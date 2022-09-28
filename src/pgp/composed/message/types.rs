@@ -866,6 +866,7 @@ mod tests {
         parsed.verify(&pkey).unwrap();
     }
 
+    #[ignore]
     #[test]
     fn test_rsa_signing_string() {
         let (skey, _headers) = SignedSecretKey::from_armor_single(
@@ -890,6 +891,7 @@ mod tests {
         parsed.verify(&pkey).unwrap();
     }
 
+    #[ignore]
     #[test]
     fn test_rsa_signing_bytes() {
         let (skey, _headers) = SignedSecretKey::from_armor_single(
@@ -914,6 +916,7 @@ mod tests {
         parsed.verify(&pkey).unwrap();
     }
 
+    #[ignore]
     #[test]
     fn test_rsa_signing_bytes_compressed() {
         let (skey, _headers) = SignedSecretKey::from_armor_single(
