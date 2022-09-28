@@ -1,18 +1,15 @@
-use crate::pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
-use crate::pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
-use crate::pgp::types::CompressionAlgorithm;
-use crate::pgp::{SignedSecretKey, SubkeyParamsBuilder};
+use crate::generate::generate_keys;
 use bip39::{Language, Mnemonic};
-use chrono::{DateTime, NaiveDate, TimeZone, Utc};
+use chrono::{NaiveDate, TimeZone, Utc};
 use clap::CommandFactory;
 use clap::Parser;
-use rand::{thread_rng, CryptoRng, Rng, RngCore, SeedableRng};
-use sha2::{Digest, Sha256};
-use smallvec::*;
+use rand::{thread_rng, RngCore};
 use std::fs::File;
 use std::io::Write;
 use std::process::exit;
 use std::str::FromStr;
+
+mod generate;
 
 #[macro_use]
 extern crate nom;
@@ -114,109 +111,6 @@ fn print_mnemonic(mnemonic: &Mnemonic, args: &Args) {
 fn read_passphrase() -> Result<String, anyhow::Error> {
     let passphrase = rpassword::prompt_password("Passphrase: ")?;
     Ok(passphrase.trim().to_string())
-}
-
-fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    hasher.update(b"DERIVE");
-    hasher.update(&master_seed);
-    hasher.update(format!("/{}", index).as_bytes());
-    let digest = hasher.finalize();
-
-    let mut seed = [0u8; 32];
-    seed[..32].copy_from_slice(&digest[..32]);
-    seed
-}
-
-fn new_rng(seed: [u8; 32]) -> impl Rng + CryptoRng {
-    rand_chacha::ChaCha20Rng::from_seed(seed)
-}
-
-fn generate_keys(
-    mnemonic: Mnemonic,
-    name: String,
-    email: String,
-    created_time: DateTime<Utc>,
-    passphrase: Option<String>,
-) -> Result<SignedSecretKey, anyhow::Error> {
-    let master_seed = mnemonic.to_seed("");
-    let passwd_fn = {
-        let passphrase = match passphrase {
-            Some(ref passphrase) => passphrase.clone(),
-            None => String::new(),
-        };
-        move || passphrase.clone()
-    };
-
-    let mut key_material = Vec::new();
-
-    for index in 1..=4 {
-        let mut rng = new_rng(derive_rng_seed(&master_seed, index));
-        key_material.push(Some(
-            KeyType::Rsa(4096).generate_with_rng(&mut rng, passphrase.clone())?,
-        ));
-    }
-
-    let secret_key_params = SecretKeyParamsBuilder::default()
-        .key_type(KeyType::Rsa(4096))
-        .can_create_certificates(true)
-        .can_sign(false)
-        .can_encrypt(false)
-        .primary_user_id(format!("{} <{}>", name, email))
-        .preferred_symmetric_algorithms(smallvec![SymmetricKeyAlgorithm::AES256,])
-        .preferred_hash_algorithms(smallvec![
-            HashAlgorithm::SHA2_512,
-            HashAlgorithm::SHA2_384,
-            HashAlgorithm::SHA2_256,
-            HashAlgorithm::SHA2_224,
-        ])
-        .preferred_compression_algorithms(smallvec![CompressionAlgorithm::ZLIB,])
-        .created_at(created_time)
-        .key_material(key_material[0].take())
-        .passphrase(passphrase.clone())
-        .subkeys(vec![
-            SubkeyParamsBuilder::default()
-                .can_create_certificates(false)
-                .can_sign(true)
-                .can_encrypt(false)
-                .can_authenticate(false)
-                .key_type(KeyType::Rsa(4096))
-                .created_at(created_time)
-                .key_material(key_material[1].take())
-                .passphrase(passphrase.clone())
-                .build()
-                .map_err(anyhow::Error::msg)?,
-            SubkeyParamsBuilder::default()
-                .can_create_certificates(false)
-                .can_sign(false)
-                .can_encrypt(true)
-                .can_authenticate(false)
-                .key_type(KeyType::Rsa(4096))
-                .created_at(created_time)
-                .key_material(key_material[2].take())
-                .passphrase(passphrase.clone())
-                .build()
-                .map_err(anyhow::Error::msg)?,
-            SubkeyParamsBuilder::default()
-                .can_create_certificates(false)
-                .can_sign(false)
-                .can_encrypt(false)
-                .can_authenticate(true)
-                .key_type(KeyType::Rsa(4096))
-                .created_at(created_time)
-                .key_material(key_material[3].take())
-                .passphrase(passphrase)
-                .build()
-                .map_err(anyhow::Error::msg)?,
-        ])
-        .build()
-        .map_err(anyhow::Error::msg)?;
-
-    let mut rng = new_rng(derive_rng_seed(&master_seed, 5));
-    let secret_key = secret_key_params.generate_with_rng(&mut rng)?;
-    let signed_secret_key = secret_key.sign(passwd_fn, created_time)?;
-
-    Ok(signed_secret_key)
 }
 
 fn main() -> Result<(), anyhow::Error> {
