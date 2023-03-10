@@ -30,7 +30,10 @@ impl Deserialize for Signature {
 
 /// Convert an epoch timestamp to a `DateTime`
 fn dt_from_timestamp(ts: u32) -> DateTime<Utc> {
-    DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(i64::from(ts), 0), Utc)
+    DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp_opt(i64::from(ts), 0).expect("valid timestamp"),
+        Utc,
+    )
 }
 
 // Parse a signature creation time subpacket
@@ -347,7 +350,7 @@ named_args!(v3_parser(packet_version: Version, version: SignatureVersion) <Signa
     // One-octet signature type.
     >>      typ: map_opt!(be_u8, SignatureType::from_u8)
     // Four-octet creation time.
-    >>  created: map!(be_u32, |v| Utc.timestamp(i64::from(v), 0))
+    >>  created: map!(be_u32, |v| Utc.timestamp_opt(i64::from(v), 0).unwrap())
     // Eight-octet Key ID of signer.
     >>   issuer: map_res!(take!(8), KeyId::from_slice)
     // One-octet public-key algorithm.

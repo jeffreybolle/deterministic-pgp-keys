@@ -11,7 +11,7 @@ use smallvec::*;
 fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(b"DERIVE");
-    hasher.update(&master_seed);
+    hasher.update(master_seed);
     hasher.update(format!("/{}", index).as_bytes());
     let digest = hasher.finalize();
 
@@ -131,7 +131,12 @@ mod tests {
             mnemonic,
             "Jeffrey Bolle".to_string(),
             "jeffreybolle@gmail.com".to_string(),
-            Utc.from_utc_datetime(&NaiveDate::from_ymd(2022, 9, 21).and_hms(0, 0, 0)),
+            Utc.from_utc_datetime(
+                &NaiveDate::from_ymd_opt(2022, 9, 21)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap(),
+            ),
             None,
         )
         .unwrap();

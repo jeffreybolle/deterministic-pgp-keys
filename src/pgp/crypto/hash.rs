@@ -108,6 +108,7 @@ derive_hasher!(Sha2_224Hasher, sha2::Sha224);
 derive_hasher!(Sha3_256Hasher, sha3::Sha3_256);
 derive_hasher!(Sha3_512Hasher, sha3::Sha3_512);
 
+#[allow(clippy::box_default)]
 impl HashAlgorithm {
     /// Create a new hasher.
     pub fn new_hasher(self) -> Result<Box<dyn Hasher>> {

@@ -142,7 +142,7 @@ fn main() -> Result<(), anyhow::Error> {
         mnemonic,
         args.name,
         args.email,
-        Utc.from_utc_datetime(&args.date.and_hms(0, 0, 0)),
+        Utc.from_utc_datetime(&args.date.and_hms_opt(0, 0, 0).unwrap()),
         passphrase,
     )?;
 

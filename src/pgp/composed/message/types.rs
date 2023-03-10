@@ -430,7 +430,7 @@ impl Message {
     /// Returns a message decrypter, and a list of [KeyId]s that are valid recipients of this message.
     pub fn decrypt<'a, F, G>(
         &'a self,
-        msg_pw: F, // TODO: remove
+        _msg_pw: F, // TODO: remove
         key_pw: G,
         keys: &[&SignedSecretKey],
     ) -> Result<(MessageDecrypter<'a>, Vec<KeyId>)>
@@ -443,7 +443,7 @@ impl Message {
                 bail!("not encrypted");
             }
             Message::Signed { message, .. } => match message {
-                Some(message) => message.as_ref().decrypt(msg_pw, key_pw, keys),
+                Some(message) => message.as_ref().decrypt(_msg_pw, key_pw, keys),
                 None => bail!("not encrypted"),
             },
             Message::Encrypted { esk, edata, .. } => {
