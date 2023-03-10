@@ -1,16 +1,22 @@
 # Deterministic PGP Keys
-Generate PGP keys from a 12 word seed phrase
+Generate PGP keys from a 12 word seed phrase.
+
+## Installation
+
+```bash
+cargo install deterministic-pgp-keys
+```
 
 ## Examples
 
 Example generate a new seed phrase:
 ```bash
-$ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
-                           --email 'jeffreybolle@gmail.com' \
-                           --date '2022-09-21' \
-                           --public-key public.asc \
-                           --private-key private.asc \
-                           --generate
+$ deterministic-pgp-keys --name "Jeffrey Bolle" \
+                         --email "jeffreybolle@gmail.com" \
+                         --date "2022-09-21" \
+                         --public-key public.asc \
+                         --private-key private.asc \
+                         --generate
 
 Seed Phrase:
 
@@ -42,11 +48,11 @@ $ sha256sum public.asc private.asc
 Recover a key from an existing seed phrase:
 
 ```bash
-$ ./deterministic-pgp-keys --name 'Jeffrey Bolle' \
-                           --email 'jeffreybolle@gmail.com' \
-                           --date '2022-09-21' \
-                           --public-key public.asc \
-                           --private-key private.asc
+$ deterministic-pgp-keys --name "Jeffrey Bolle" \
+                         --email "jeffreybolle@gmail.com" \
+                         --date "2022-09-21" \
+                         --public-key public.asc \
+                         --private-key private.asc
 
 Seed Phrase: design car dutch struggle hello pluck bubble hospital muffin earn half best
 
