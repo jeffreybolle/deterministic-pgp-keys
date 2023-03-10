@@ -38,8 +38,8 @@ struct Args {
     #[clap(long)]
     name: String,
 
-    #[clap(long)]
-    email: String,
+    #[clap(long, required(true))]
+    email: Vec<String>,
 
     #[clap(long)]
     date: NaiveDate,

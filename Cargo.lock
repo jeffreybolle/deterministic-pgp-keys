@@ -495,7 +495,7 @@ dependencies = [
 
 [[package]]
 name = "deterministic-pgp-keys"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "aes",
  "anyhow",

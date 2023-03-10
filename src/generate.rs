@@ -27,7 +27,7 @@ fn new_rng(seed: [u8; 32]) -> impl Rng + CryptoRng {
 pub fn generate_keys(
     mnemonic: Mnemonic,
     name: String,
-    email: String,
+    email_addresses: Vec<String>,
     created_time: DateTime<Utc>,
     passphrase: Option<String>,
 ) -> Result<SignedSecretKey, anyhow::Error> {
@@ -39,6 +39,18 @@ pub fn generate_keys(
         };
         move || passphrase.clone()
     };
+
+    assert!(
+        !email_addresses.is_empty(),
+        "email_addresses vector is empty"
+    );
+    let primary_user_id = format!("{} <{}>", name, email_addresses[0]);
+
+    let extra_user_ids: Vec<_> = email_addresses
+        .iter()
+        .skip(1)
+        .map(|address| format!("{} <{}>", name, address))
+        .collect();
 
     let mut key_material = Vec::new();
 
@@ -54,7 +66,8 @@ pub fn generate_keys(
         .can_create_certificates(true)
         .can_sign(false)
         .can_encrypt(false)
-        .primary_user_id(format!("{} <{}>", name, email))
+        .primary_user_id(primary_user_id)
+        .user_ids(extra_user_ids)
         .preferred_symmetric_algorithms(smallvec![SymmetricKeyAlgorithm::AES256,])
         .preferred_hash_algorithms(smallvec![
             HashAlgorithm::SHA2_512,
@@ -130,7 +143,7 @@ mod tests {
         let secret_key = generate_keys(
             mnemonic,
             "Jeffrey Bolle".to_string(),
-            "jeffreybolle@gmail.com".to_string(),
+            vec!["jeffreybolle@gmail.com".to_string()],
             Utc.from_utc_datetime(
                 &NaiveDate::from_ymd_opt(2022, 9, 21)
                     .unwrap()
