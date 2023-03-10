@@ -32,28 +32,32 @@ mod pgp;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    #[clap(long)]
+    #[clap(long, help("Generate a new random seed phrase"))]
     generate: bool,
 
-    #[clap(long)]
+    #[clap(long, help("Provide your full name"))]
     name: String,
 
-    #[clap(long, required(true))]
+    #[clap(
+        long,
+        required(true),
+        help("Provide your email address (this option can be repeated)")
+    )]
     email: Vec<String>,
 
-    #[clap(long)]
+    #[clap(long, help("Provide the creation date for the PGP key"))]
     date: NaiveDate,
 
-    #[clap(long)]
+    #[clap(long, help("Path to write private key file"))]
     private_key: Option<String>,
 
-    #[clap(long)]
+    #[clap(long, help("Path to write public key file"))]
     public_key: Option<String>,
 
-    #[clap(long)]
+    #[clap(long, help("Print the seed phrase without numbers"))]
     plain_seed_phrase: bool,
 
-    #[clap(long)]
+    #[clap(long, help("Passphrase to encrypt the private key"))]
     passphrase: bool,
 }
 
