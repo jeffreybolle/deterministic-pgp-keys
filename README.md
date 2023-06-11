@@ -32,17 +32,17 @@ written: public.asc
 
 $ gpg --keyid-format long --show-key public.asc
 
-pub   rsa4096/3C0477EBC839A4EB 2022-09-21 [C]
-      40D5580A0D4C2E966A57CA643C0477EBC839A4EB
+pub   rsa4096/9976BCC4EF5FB7B1 2022-09-21 [C]
+      BCD8DCBB5F14E54C149AEE579976BCC4EF5FB7B1
 uid                            Jeffrey Bolle <jeffreybolle@gmail.com>
-sub   rsa4096/1ADED7E832E44A9C 2022-09-21 [S]
-sub   rsa4096/65C64F42070EDC53 2022-09-21 [E]
-sub   rsa4096/17CB25180FCA8973 2022-09-21 [A]
+sub   rsa4096/2A32DF3F36F8107D 2022-09-21 [S]
+sub   rsa4096/28DF1DC410534AD4 2022-09-21 [E]
+sub   rsa4096/251A4D229D3A2790 2022-09-21 [A]
 
 $ sha256sum public.asc private.asc
 
-8074ddb524121edc31a1c6ce616ba37ac71412999802be804f252b33259fa0bc  public.asc
-64c44c971ae50ddd3a30c516e5249e736e883b1d7aec018e041b1e0b63a45962  private.asc
+4302e29906d2d48a6d7786b38badec2141f7443d5f4020a29ad803c643176b8f  public.asc
+a6d0bc672d588a8f6e5697c4269134b7c56c15797d4b024c362a2612ff40ac40  private.asc
 ```
 
 Recover a key from an existing seed phrase:
@@ -61,18 +61,24 @@ written: public.asc
 
 $ gpg --keyid-format long --show-key public.asc
 
-pub   rsa4096/3C0477EBC839A4EB 2022-09-21 [C]
-      40D5580A0D4C2E966A57CA643C0477EBC839A4EB
+pub   rsa4096/9976BCC4EF5FB7B1 2022-09-21 [C]
+      BCD8DCBB5F14E54C149AEE579976BCC4EF5FB7B1
 uid                            Jeffrey Bolle <jeffreybolle@gmail.com>
-sub   rsa4096/1ADED7E832E44A9C 2022-09-21 [S]
-sub   rsa4096/65C64F42070EDC53 2022-09-21 [E]
-sub   rsa4096/17CB25180FCA8973 2022-09-21 [A]
+sub   rsa4096/2A32DF3F36F8107D 2022-09-21 [S]
+sub   rsa4096/28DF1DC410534AD4 2022-09-21 [E]
+sub   rsa4096/251A4D229D3A2790 2022-09-21 [A]
 
 $ sha256sum public.asc private.asc
 
-8074ddb524121edc31a1c6ce616ba37ac71412999802be804f252b33259fa0bc  public.asc
-64c44c971ae50ddd3a30c516e5249e736e883b1d7aec018e041b1e0b63a45962  private.asc
+4302e29906d2d48a6d7786b38badec2141f7443d5f4020a29ad803c643176b8f  public.asc
+a6d0bc672d588a8f6e5697c4269134b7c56c15797d4b024c362a2612ff40ac40  private.asc
 ```
+
+## Key Generation Stability
+
+Key generation is only guaranteed to be stable for the same major version number (minor version number for 0.x 
+releases).  Please note the version that you used the generate your keys to ensure that you can regenerate them later.
+Specifically keys generated on 0.3.x and 0.4.x versions cannot be regenerated on 0.5.x versions.
 
 ## Acknowledgements
 

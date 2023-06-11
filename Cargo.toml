@@ -1,6 +1,6 @@
 [package]
 name = "deterministic-pgp-keys"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 authors = ["Jeffrey Bolle <jeffreybolle@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -48,6 +48,7 @@ thiserror = "1.0.9"
 twofish = "^0.6"
 zeroize = { version = "1.4", features = ["zeroize_derive"] }
 getrandom = { version = "0.2.3", optional = true }
+hkdf = { version = "0.11.0", features = ["std"] }
 
 [dependencies.buf_redux]
 version = "0.8.1"

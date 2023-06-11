@@ -4,20 +4,16 @@ use crate::pgp::types::CompressionAlgorithm;
 use crate::pgp::{SignedSecretKey, SubkeyParamsBuilder};
 use bip39::Mnemonic;
 use chrono::{DateTime, Utc};
+use hkdf::Hkdf;
 use rand::{CryptoRng, Rng, SeedableRng};
-use sha2::{Digest, Sha256};
+use sha3::Sha3_256;
 use smallvec::*;
 
-fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    hasher.update(b"DERIVE");
-    hasher.update(master_seed);
-    hasher.update(format!("/{}", index).as_bytes());
-    let digest = hasher.finalize();
-
+fn derive_rng_seed(master_seed: &[u8; 64], index: u64) -> Result<[u8; 32], anyhow::Error> {
+    let hkdf = Hkdf::<Sha3_256>::new(None, master_seed);
     let mut seed = [0u8; 32];
-    seed[..32].copy_from_slice(&digest[..32]);
-    seed
+    hkdf.expand(format!("index_{}", index).as_bytes(), &mut seed)?;
+    Ok(seed)
 }
 
 fn new_rng(seed: [u8; 32]) -> impl Rng + CryptoRng {
@@ -55,7 +51,7 @@ pub fn generate_keys(
     let mut key_material = Vec::new();
 
     for index in 1..=4 {
-        let mut rng = new_rng(derive_rng_seed(&master_seed, index));
+        let mut rng = new_rng(derive_rng_seed(&master_seed, index)?);
         key_material.push(Some(
             KeyType::Rsa(4096).generate_with_rng(&mut rng, passphrase.clone())?,
         ));
@@ -117,7 +113,7 @@ pub fn generate_keys(
         .build()
         .map_err(anyhow::Error::msg)?;
 
-    let mut rng = new_rng(derive_rng_seed(&master_seed, 5));
+    let mut rng = new_rng(derive_rng_seed(&master_seed, 5)?);
     let secret_key = secret_key_params.generate_with_rng(&mut rng)?;
     let signed_secret_key = secret_key.sign(passwd_fn, created_time)?;
 
@@ -163,7 +159,7 @@ mod tests {
         let mut hasher = Sha256::new();
         hasher.update(&secret_key_bytes);
         assert_eq!(
-            "64c44c971ae50ddd3a30c516e5249e736e883b1d7aec018e041b1e0b63a45962",
+            "a6d0bc672d588a8f6e5697c4269134b7c56c15797d4b024c362a2612ff40ac40",
             hex::encode(hasher.finalize())
         );
 
@@ -175,7 +171,7 @@ mod tests {
         let mut hasher = Sha256::new();
         hasher.update(&public_key_bytes);
         assert_eq!(
-            "8074ddb524121edc31a1c6ce616ba37ac71412999802be804f252b33259fa0bc",
+            "4302e29906d2d48a6d7786b38badec2141f7443d5f4020a29ad803c643176b8f",
             hex::encode(hasher.finalize())
         );
     }
