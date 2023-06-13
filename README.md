@@ -32,17 +32,17 @@ written: public.asc
 
 $ gpg --keyid-format long --show-key public.asc
 
-pub   rsa4096/9976BCC4EF5FB7B1 2022-09-21 [C]
-      BCD8DCBB5F14E54C149AEE579976BCC4EF5FB7B1
+pub   rsa4096/507815B996600F36 2022-09-21 [C]
+      AE39CF95A4039CAEFD1C22A7507815B996600F36
 uid                            Jeffrey Bolle <jeffreybolle@gmail.com>
-sub   rsa4096/2A32DF3F36F8107D 2022-09-21 [S]
-sub   rsa4096/28DF1DC410534AD4 2022-09-21 [E]
-sub   rsa4096/251A4D229D3A2790 2022-09-21 [A]
+sub   rsa4096/D92839349498B4E1 2022-09-21 [S]
+sub   rsa4096/F29826BF06FF3C1C 2022-09-21 [E]
+sub   rsa4096/A8A8BD8D480C88FB 2022-09-21 [A]
 
 $ sha256sum public.asc private.asc
 
-4302e29906d2d48a6d7786b38badec2141f7443d5f4020a29ad803c643176b8f  public.asc
-a6d0bc672d588a8f6e5697c4269134b7c56c15797d4b024c362a2612ff40ac40  private.asc
+074722130decd18b9a1eaf1219d5bb358745c517a8af9c3d6a81ead03e25ad50  public.asc
+37cf6cc556e27c35a1e9325587079d651e5ca5fd77851676b4929560460c6626  private.asc
 ```
 
 Recover a key from an existing seed phrase:
@@ -61,17 +61,17 @@ written: public.asc
 
 $ gpg --keyid-format long --show-key public.asc
 
-pub   rsa4096/9976BCC4EF5FB7B1 2022-09-21 [C]
-      BCD8DCBB5F14E54C149AEE579976BCC4EF5FB7B1
+pub   rsa4096/507815B996600F36 2022-09-21 [C]
+      AE39CF95A4039CAEFD1C22A7507815B996600F36
 uid                            Jeffrey Bolle <jeffreybolle@gmail.com>
-sub   rsa4096/2A32DF3F36F8107D 2022-09-21 [S]
-sub   rsa4096/28DF1DC410534AD4 2022-09-21 [E]
-sub   rsa4096/251A4D229D3A2790 2022-09-21 [A]
+sub   rsa4096/D92839349498B4E1 2022-09-21 [S]
+sub   rsa4096/F29826BF06FF3C1C 2022-09-21 [E]
+sub   rsa4096/A8A8BD8D480C88FB 2022-09-21 [A]
 
 $ sha256sum public.asc private.asc
 
-4302e29906d2d48a6d7786b38badec2141f7443d5f4020a29ad803c643176b8f  public.asc
-a6d0bc672d588a8f6e5697c4269134b7c56c15797d4b024c362a2612ff40ac40  private.asc
+074722130decd18b9a1eaf1219d5bb358745c517a8af9c3d6a81ead03e25ad50  public.asc
+37cf6cc556e27c35a1e9325587079d651e5ca5fd77851676b4929560460c6626  private.asc
 ```
 
 ## Key Generation Stability
