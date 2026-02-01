@@ -37,7 +37,7 @@ nom = "8"
 num-derive = "0.4"
 num-traits = "0.2.6"
 ripemd = { version = "0.1", features = ["oid"] }
-rsa = "0.9"
+rsa = "0.9.10"
 sha1 = { version = "0.10", features = ["oid"] }
 sha2 = { version = "0.10", features = ["oid"] }
 sha3 = { version = "0.10", features = ["oid"] }
