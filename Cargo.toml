@@ -68,7 +68,7 @@ version = "0.2.0"
 optional = true
 
 [dependencies.num-bigint]
-version = "0.8"
+version = "0.8.6"
 features = ["rand", "i128", "u64_digit", "prime", "zeroize"]
 package = "num-bigint-dig"
 
