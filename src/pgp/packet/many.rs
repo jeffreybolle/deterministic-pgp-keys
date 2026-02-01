@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use buf_redux::Buffer;
+use crate::pgp::buffer::Buffer;
 use nom::{Needed, Offset};
 
 use crate::pgp::errors::{Error, Result};

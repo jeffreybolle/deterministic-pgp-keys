@@ -3,7 +3,7 @@ use std::hash::Hasher;
 use std::io::prelude::*;
 use std::{fmt, io, str};
 
-use buf_redux::BufReader;
+use crate::pgp::buffer::BufReader;
 use byteorder::{BigEndian, ByteOrder};
 
 use nom::{self, digit, line_ending, not_line_ending, InputIter, InputLength, Slice};

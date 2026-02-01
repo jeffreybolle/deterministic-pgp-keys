@@ -45,6 +45,7 @@ pub mod util;
 
 #[macro_use]
 pub mod errors;
+pub mod buffer;
 pub mod armor;
 pub mod base64_decoder;
 pub mod base64_reader;

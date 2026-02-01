@@ -49,10 +49,6 @@ zeroize = { version = "1.8", features = ["zeroize_derive"] }
 getrandom = { version = "0.2.3", optional = true }
 hkdf = "0.12"
 
-[dependencies.buf_redux]
-version = "0.8.1"
-default-features = false
-
 [dependencies.ed25519-dalek]
 version = "^1.0"
 default-features = false

@@ -1,13 +1,13 @@
 //! # base64 decoder module
 
 use std::fmt;
-use std::io::{self, BufRead, Read, Seek};
+use std::io::{self, Read, Seek};
 
 use base64::alphabet::Alphabet;
 use base64::engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig};
 use base64::engine::DecodePaddingMode;
 use base64::Engine;
-use buf_redux::{BufReader, Buffer};
+use crate::pgp::buffer::{BufReader, Buffer};
 
 const BUF_SIZE: usize = 1024;
 const BUF_CAPACITY: usize = BUF_SIZE / 4 * 3;
