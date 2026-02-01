@@ -552,7 +552,6 @@ dependencies = [
  "ed25519-dalek",
  "flate2",
  "generic-array",
- "getrandom",
  "glob",
  "gperftools",
  "hex",

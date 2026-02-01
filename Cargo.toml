@@ -46,7 +46,6 @@ smallvec = "1.6.1"
 thiserror = "2"
 twofish = "0.7"
 zeroize = { version = "1.8", features = ["zeroize_derive"] }
-getrandom = { version = "0.2.3", optional = true }
 hkdf = "0.12"
 
 [dependencies.ed25519-dalek]
