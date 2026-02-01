@@ -30,34 +30,34 @@ mod pgp;
 
 /// Program to create deterministic PGP keys
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 struct Args {
-    #[clap(long, help("Generate a new random seed phrase"))]
+    #[arg(long, help = "Generate a new random seed phrase")]
     generate: bool,
 
-    #[clap(long, help("Provide your full name"))]
+    #[arg(long, help = "Provide your full name")]
     name: String,
 
-    #[clap(
+    #[arg(
         long,
-        required(true),
-        help("Provide your email address (this option can be repeated)")
+        required = true,
+        help = "Provide your email address (this option can be repeated)"
     )]
     email: Vec<String>,
 
-    #[clap(long, help("Provide the creation date for the PGP key"))]
+    #[arg(long, help = "Provide the creation date for the PGP key")]
     date: NaiveDate,
 
-    #[clap(long, help("Path to write private key file"))]
+    #[arg(long, help = "Path to write private key file")]
     private_key: Option<String>,
 
-    #[clap(long, help("Path to write public key file"))]
+    #[arg(long, help = "Path to write public key file")]
     public_key: Option<String>,
 
-    #[clap(long, help("Print the seed phrase without numbers"))]
+    #[arg(long, help = "Print the seed phrase without numbers")]
     plain_seed_phrase: bool,
 
-    #[clap(long, help("Passphrase to encrypt the private key"))]
+    #[arg(long, help = "Passphrase to encrypt the private key")]
     passphrase: bool,
 }
 
@@ -88,14 +88,14 @@ fn generate_seed_phrase(args: &Args) -> Result<Mnemonic, anyhow::Error> {
 }
 
 fn print_mnemonic(mnemonic: &Mnemonic, args: &Args) {
-    let words: Vec<_> = mnemonic.word_iter().map(str::to_string).collect();
+    let words: Vec<_> = mnemonic.words().map(str::to_string).collect();
 
     println!();
     println!("Seed Phrase:");
     println!();
 
     if !args.plain_seed_phrase {
-        let length = mnemonic.word_iter().map(str::len).max().unwrap();
+        let length = mnemonic.words().map(str::len).max().unwrap();
         for i in 0..6 {
             println!(
                 "  {: >2}: {}  {: >2}: {}",

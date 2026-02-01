@@ -1,8 +1,8 @@
 use aes::{Aes128, Aes192, Aes256};
 use blowfish::Blowfish;
 use cast5::Cast5;
-use cfb_mode::cipher::{AsyncStreamCipher, NewCipher};
-use cfb_mode::Cfb;
+use cfb_mode::{BufDecryptor, BufEncryptor};
+use cipher::KeyIvInit;
 use des::TdesEde3;
 use rand::{thread_rng, CryptoRng, Rng};
 use sha1::{Digest, Sha1};
@@ -13,7 +13,7 @@ use crate::pgp::errors::{Error, Result};
 
 macro_rules! decrypt {
     ($mode:ident, $key:expr, $iv:expr, $prefix:expr, $data:expr, $bs:expr, $resync:expr) => {{
-        let mut mode = Cfb::<$mode>::new_from_slices($key, $iv)?;
+        let mut mode = BufDecryptor::<$mode>::new_from_slices($key, $iv)?;
         mode.decrypt($prefix);
 
         // quick check, before decrypting the rest
@@ -31,7 +31,7 @@ macro_rules! decrypt {
         if $resync {
             unimplemented!("CFB resync is not here");
         // debug!("resync {}", hex::encode(&$prefix[2..$bs + 2]));
-        // let mut mode = Cfb::<$mode>::new_from_slices($key, &$prefix[2..$bs + 2])?;
+        // let mut mode = BufDecryptor::<$mode>::new_from_slices($key, &$prefix[2..$bs + 2])?;
         // mode.decrypt($data);
         } else {
             mode.decrypt($data);
@@ -41,13 +41,13 @@ macro_rules! decrypt {
 
 macro_rules! encrypt {
     ($mode:ident, $key:expr, $iv:expr, $prefix:expr, $data:expr, $bs:expr, $resync:expr) => {{
-        let mut mode = Cfb::<$mode>::new_from_slices($key, $iv)?;
+        let mut mode = BufEncryptor::<$mode>::new_from_slices($key, $iv)?;
         mode.encrypt($prefix);
 
         if $resync {
             unimplemented!("CFB resync is not here");
         // debug!("resync {}", hex::encode(&$prefix[2..$bs + 2]));
-        // let mut mode = Cfb::<$mode>::new_var($key, &$prefix[2..$bs + 2])?;
+        // let mut mode = BufEncryptor::<$mode>::new_var($key, &$prefix[2..$bs + 2])?;
         // mode.encrypt($data);
         } else {
             mode.encrypt($data);
@@ -57,13 +57,13 @@ macro_rules! encrypt {
 
 macro_rules! decrypt_regular {
     ($mode:ident, $key:expr, $iv:expr, $ciphertext:expr, $bs:expr) => {{
-        let mut mode = Cfb::<$mode>::new_from_slices($key, $iv)?;
+        let mut mode = BufDecryptor::<$mode>::new_from_slices($key, $iv)?;
         mode.decrypt($ciphertext);
     }};
 }
 macro_rules! encrypt_regular {
     ($mode:ident, $key:expr, $iv:expr, $plaintext:expr, $bs:expr) => {{
-        let mut mode = Cfb::<$mode>::new_from_slices($key, $iv)?;
+        let mut mode = BufEncryptor::<$mode>::new_from_slices($key, $iv)?;
         mode.encrypt($plaintext);
     }};
 }

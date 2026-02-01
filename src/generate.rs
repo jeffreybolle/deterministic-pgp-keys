@@ -19,7 +19,8 @@ fn hash_email(email: &str) -> [u8; 32] {
 fn derive_rng_seed(master_seed: &[u8; 64], salt: [u8; 32], index: u64) -> Result<[u8; 32], anyhow::Error> {
     let hkdf = Hkdf::<Sha3_256>::new(Some(salt.as_slice()), master_seed);
     let mut seed = [0u8; 32];
-    hkdf.expand(format!("index_{}", index).as_bytes(), &mut seed)?;
+    hkdf.expand(format!("index_{}", index).as_bytes(), &mut seed)
+        .map_err(|_| anyhow::anyhow!("HKDF expand failed"))?;
     Ok(seed)
 }
 

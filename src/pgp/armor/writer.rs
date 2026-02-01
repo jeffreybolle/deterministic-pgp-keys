@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::hash::Hasher;
 use std::io::Write;
 
+use base64::Engine;
 use crc24::Crc24Hasher;
 
 use crate::pgp::armor::BlockType;
@@ -38,7 +39,10 @@ pub fn write(
     let mut crc_hasher = Crc24Hasher::init(0x00B7_04CE);
     {
         let mut line_wrapper = LineWriter::<_, U64>::new(writer.by_ref(), LineBreak::Lf);
-        let mut enc = base64::write::EncoderWriter::new(&mut line_wrapper, base64::STANDARD);
+        let mut enc = base64::write::EncoderWriter::new(
+            &mut line_wrapper,
+            &base64::engine::general_purpose::STANDARD,
+        );
 
         let mut tee = TeeWriter::new(&mut crc_hasher, &mut enc);
         source.to_writer(&mut tee)?;
@@ -55,7 +59,7 @@ pub fn write(
         (crc >> 8) as u8,
         crc as u8,
     ];
-    let crc_enc = base64::encode_config(crc_buf, base64::STANDARD);
+    let crc_enc = base64::engine::general_purpose::STANDARD.encode(crc_buf);
 
     writer.write_all(crc_enc.as_bytes())?;
 

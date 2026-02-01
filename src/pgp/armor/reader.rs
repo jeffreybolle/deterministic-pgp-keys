@@ -233,8 +233,10 @@ named!(armor_header(&[u8]) -> (BlockType, BTreeMap<String, String>), do_parse!(
 
 /// Read the checksum from an base64 encoded buffer.
 fn read_checksum(input: &[u8]) -> ::std::io::Result<u64> {
-    let checksum =
-        base64::decode_config(input, base64::STANDARD).map_err(|_| io::ErrorKind::InvalidData)?;
+    use base64::Engine;
+    let checksum = base64::engine::general_purpose::STANDARD
+        .decode(input)
+        .map_err(|_| io::ErrorKind::InvalidData)?;
 
     let mut buf = [0; 4];
     let mut i = checksum.len();

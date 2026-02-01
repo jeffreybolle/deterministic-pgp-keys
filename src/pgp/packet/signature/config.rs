@@ -12,6 +12,7 @@ use crate::pgp::ser::Serialize;
 use crate::pgp::types::{KeyId, PublicKeyTrait, SecretKeyTrait, Tag};
 
 #[derive(Clone, PartialEq, Eq, Builder)]
+#[builder(build_fn(error = "crate::pgp::errors::Error"))]
 pub struct SignatureConfig {
     #[builder(default)]
     pub version: SignatureVersion,

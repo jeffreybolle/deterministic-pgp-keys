@@ -1,4 +1,4 @@
-use block_padding::{Padding, Pkcs7};
+use block_padding::{Pkcs7, RawPadding};
 use rand::{CryptoRng, Rng};
 use x25519_dalek::{PublicKey, StaticSecret};
 use zeroize::{Zeroize, Zeroizing};
@@ -140,7 +140,7 @@ pub fn decrypt(priv_key: &ECDHSecretKey, mpis: &[Mpi], fingerprint: &[u8]) -> Re
     let decrypted_key_padded = aes_kw::unwrap(&z, &encrypted_session_key_vec)?;
 
     // PKCS5 unpadding (PKCS5 is PKCS7 with a blocksize of 8)
-    let decrypted_key = Pkcs7::unpad(&decrypted_key_padded)?;
+    let decrypted_key = Pkcs7::raw_unpad(&decrypted_key_padded)?;
 
     Ok(decrypted_key.to_vec())
 }
@@ -198,9 +198,11 @@ pub fn encrypt<R: CryptoRng + Rng>(
 
     // PKCS5 padding (PKCS5 is PKCS7 with a blocksize of 8)
     let len = plain.len();
+    let padded_len = ((len / 8) + 1) * 8;
     let mut plain_padded = plain.to_vec();
-    plain_padded.resize(len + 8, 0);
-    let plain_padded_ref = Pkcs7::pad(&mut plain_padded, len, 8)?;
+    plain_padded.resize(padded_len, 0);
+    Pkcs7::raw_pad(&mut plain_padded, len);
+    let plain_padded_ref = &plain_padded[..];
 
     // Peform AES Key Wrap
     let encrypted_key = aes_kw::wrap(&z, plain_padded_ref)?;

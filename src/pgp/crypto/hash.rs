@@ -3,10 +3,10 @@ use std::convert::TryInto;
 
 use rsa::Hash;
 
-use digest::{Digest, FixedOutput};
+use digest::{Digest, OutputSizeUser};
 use generic_array::typenum::Unsigned;
 use md5::Md5;
-use ripemd160::Ripemd160;
+use ripemd::Ripemd160;
 use sha1::Sha1;
 
 use crate::pgp::errors::{Error, Result};
@@ -81,7 +81,7 @@ macro_rules! derive_hasher {
             }
 
             fn finish(self: Box<Self>) -> Vec<u8> {
-                self.inner.finalize().as_slice().to_vec()
+                self.inner.finalize().to_vec()
             }
         }
 
@@ -148,15 +148,15 @@ impl HashAlgorithm {
     /// Returns the expected digest size for the given algorithm.
     pub fn digest_size(self) -> usize {
         match self {
-            HashAlgorithm::MD5 => <Md5 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA1 => <Sha1 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::RIPEMD160 => <Ripemd160 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA2_256 => <sha2::Sha256 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA2_384 => <sha2::Sha384 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA2_512 => <sha2::Sha512 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA2_224 => <sha2::Sha224 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA3_256 => <sha3::Sha3_256 as FixedOutput>::OutputSize::to_usize(),
-            HashAlgorithm::SHA3_512 => <sha3::Sha3_512 as FixedOutput>::OutputSize::to_usize(),
+            HashAlgorithm::MD5 => <Md5 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA1 => <Sha1 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::RIPEMD160 => <Ripemd160 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA2_256 => <sha2::Sha256 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA2_384 => <sha2::Sha384 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA2_512 => <sha2::Sha512 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA2_224 => <sha2::Sha224 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA3_256 => <sha3::Sha3_256 as OutputSizeUser>::OutputSize::to_usize(),
+            HashAlgorithm::SHA3_512 => <sha3::Sha3_512 as OutputSizeUser>::OutputSize::to_usize(),
             _ => 0,
         }
     }

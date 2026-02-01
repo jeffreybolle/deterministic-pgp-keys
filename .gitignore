@@ -2,3 +2,4 @@ target/
 *.asc
 *.gpg
 !tests/**
+.idea
