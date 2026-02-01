@@ -1,14 +1,13 @@
 use std::boxed::Box;
 use std::convert::TryInto;
-
-use rsa::Hash;
-
 use digest::{Digest, OutputSizeUser};
 use generic_array::typenum::Unsigned;
 use md5::Md5;
 use ripemd::Ripemd160;
+use rsa::Pkcs1v15Sign;
 use sha1::Sha1;
-
+use sha2::{Sha224, Sha256, Sha384, Sha512};
+use sha3::{Sha3_256, Sha3_512};
 use crate::pgp::errors::{Error, Result};
 
 /// Available hash algorithms.
@@ -39,21 +38,21 @@ impl Default for HashAlgorithm {
     }
 }
 
-impl TryInto<Hash> for HashAlgorithm {
+impl TryInto<Pkcs1v15Sign> for HashAlgorithm {
     type Error = Error;
 
-    fn try_into(self) -> Result<Hash> {
+    fn try_into(self) -> Result<Pkcs1v15Sign> {
         match self {
             HashAlgorithm::None => Err(format_err!("none")),
-            HashAlgorithm::MD5 => Ok(Hash::MD5),
-            HashAlgorithm::SHA1 => Ok(Hash::SHA1),
-            HashAlgorithm::RIPEMD160 => Ok(Hash::RIPEMD160),
-            HashAlgorithm::SHA2_256 => Ok(Hash::SHA2_256),
-            HashAlgorithm::SHA2_384 => Ok(Hash::SHA2_384),
-            HashAlgorithm::SHA2_512 => Ok(Hash::SHA2_512),
-            HashAlgorithm::SHA2_224 => Ok(Hash::SHA2_224),
-            HashAlgorithm::SHA3_256 => Ok(Hash::SHA3_256),
-            HashAlgorithm::SHA3_512 => Ok(Hash::SHA3_512),
+            HashAlgorithm::MD5 => Ok(Pkcs1v15Sign::new::<Md5>()),
+            HashAlgorithm::SHA1 => Ok(Pkcs1v15Sign::new::<Sha1>()),
+            HashAlgorithm::RIPEMD160 => Ok(Pkcs1v15Sign::new::<Ripemd160>()),
+            HashAlgorithm::SHA2_256 => Ok(Pkcs1v15Sign::new::<Sha256>()),
+            HashAlgorithm::SHA2_384 => Ok(Pkcs1v15Sign::new::<Sha384>()),
+            HashAlgorithm::SHA2_512 => Ok(Pkcs1v15Sign::new::<Sha512>()),
+            HashAlgorithm::SHA2_224 => Ok(Pkcs1v15Sign::new::<Sha224>()),
+            HashAlgorithm::SHA3_256 => Ok(Pkcs1v15Sign::new::<Sha3_256>()),
+            HashAlgorithm::SHA3_512 => Ok(Pkcs1v15Sign::new::<Sha3_512>()),
             HashAlgorithm::Private10 => unsupported_err!("Private10 should not be used"),
         }
     }

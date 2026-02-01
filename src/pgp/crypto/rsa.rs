@@ -3,8 +3,8 @@ use std::convert::TryInto;
 use num_bigint::traits::ModInverse;
 use num_bigint::BigUint;
 use rand::{CryptoRng, Rng};
-use rsa::padding::PaddingScheme;
-use rsa::{PublicKey, PublicKeyParts, RsaPrivateKey, RsaPublicKey};
+use rsa::{Pkcs1v15Encrypt, Pkcs1v15Sign, RsaPrivateKey, RsaPublicKey};
+use rsa::traits::{PrivateKeyParts, PublicKeyParts};
 
 use crate::pgp::crypto::HashAlgorithm;
 use crate::pgp::errors::Result;
@@ -16,7 +16,7 @@ pub fn decrypt(priv_key: &RsaPrivateKey, mpis: &[Mpi], _fingerprint: &[u8]) -> R
     ensure_eq!(mpis.len(), 1, "invalid input");
 
     let mpi = &mpis[0];
-    let m = priv_key.decrypt(PaddingScheme::new_pkcs1v15_encrypt(), mpi.as_bytes())?;
+    let m = priv_key.decrypt(Pkcs1v15Encrypt{}, mpi.as_bytes())?;
 
     Ok(m)
 }
@@ -29,7 +29,7 @@ pub fn encrypt<R: CryptoRng + Rng>(
     plaintext: &[u8],
 ) -> Result<Vec<Vec<u8>>> {
     let key = RsaPublicKey::new(BigUint::from_bytes_be(n), BigUint::from_bytes_be(e))?;
-    let data = key.encrypt(rng, PaddingScheme::new_pkcs1v15_encrypt(), plaintext)?;
+    let data = key.encrypt(rng, Pkcs1v15Encrypt{}, plaintext)?;
 
     Ok(vec![data])
 }
@@ -67,16 +67,14 @@ pub fn generate_key<R: Rng + CryptoRng>(
 /// Verify a RSA, PKCS1v15 padded signature.
 pub fn verify(n: &[u8], e: &[u8], hash: HashAlgorithm, hashed: &[u8], sig: &[u8]) -> Result<()> {
     let key = RsaPublicKey::new(BigUint::from_bytes_be(n), BigUint::from_bytes_be(e))?;
-    let rsa_hash: Option<rsa::Hash> = hash.try_into().ok();
-
-    key.verify(PaddingScheme::new_pkcs1v15_sign(rsa_hash), hashed, sig)
-        .map_err(Into::into)
+    let pkcs1v15sign: Pkcs1v15Sign = hash.try_into()?;
+    key.verify(pkcs1v15sign, hashed, sig).map_err(Into::into)
 }
 
 /// Sign using RSA, with PKCS1v15 padding.
 pub fn sign(key: &RsaPrivateKey, hash: HashAlgorithm, digest: &[u8]) -> Result<Vec<Vec<u8>>> {
-    let rsa_hash: Option<rsa::Hash> = hash.try_into().ok();
-    let sig = key.sign(PaddingScheme::new_pkcs1v15_sign(rsa_hash), digest)?;
+    let pkcs1v15sign: Pkcs1v15Sign = hash.try_into()?;
+    let sig = key.sign(pkcs1v15sign, digest)?;
 
     Ok(vec![sig])
 }
