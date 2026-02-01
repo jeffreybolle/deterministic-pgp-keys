@@ -26,9 +26,9 @@ pub enum Decompressor<R> {
 impl<'a> Read for Decompressor<&'a [u8]> {
     fn read(&mut self, into: &mut [u8]) -> io::Result<usize> {
         match self {
-            Decompressor::Uncompressed(ref mut c) => c.read(into),
-            Decompressor::Zip(ref mut c) => c.read(into),
-            Decompressor::Zlib(ref mut c) => c.read(into),
+            Decompressor::Uncompressed(c) => c.read(into),
+            Decompressor::Zip(c) => c.read(into),
+            Decompressor::Zlib(c) => c.read(into),
             Decompressor::Bzip2 => unimplemented!("bzip2"),
         }
     }

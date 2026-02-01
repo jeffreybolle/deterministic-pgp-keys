@@ -79,7 +79,7 @@ where
         .derive_key(&msg_pw(), packet.sym_algorithm().key_size())?;
 
     match packet.encrypted_key() {
-        Some(ref encrypted_key) => {
+        Some(encrypted_key) => {
             let mut decrypted_key = encrypted_key.to_vec();
             // packet.sym_algorithm().decrypt(&key, &mut decrypted_key)?;
             let iv = vec![0u8; packet.sym_algorithm().block_size()];

@@ -251,7 +251,7 @@ mod tests {
                     let mut c = Cursor::new(&mut buf);
                     let mut w = LineWriter::<_, $len>::new(&mut c, LineBreak::Crlf);
                     for i in 0..100 {
-                        let data = (0..i).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let data = (0..i).map(|_| rng.r#gen()).collect::<Vec<_>>();
                         w.write_all(&data).unwrap();
                         list.extend(&data);
                     }

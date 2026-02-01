@@ -45,22 +45,22 @@ pub enum PublicParams {
 impl Serialize for PublicParams {
     fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<()> {
         match self {
-            PublicParams::RSA { ref n, ref e } => {
+            PublicParams::RSA { n, e } => {
                 n.to_writer(writer)?;
                 e.to_writer(writer)?;
             }
             PublicParams::DSA {
-                ref p,
-                ref q,
-                ref g,
-                ref y,
+                p,
+                q,
+                g,
+                y,
             } => {
                 p.to_writer(writer)?;
                 q.to_writer(writer)?;
                 g.to_writer(writer)?;
                 y.to_writer(writer)?;
             }
-            PublicParams::ECDSA { ref curve, ref p } => {
+            PublicParams::ECDSA { curve, p } => {
                 let oid = curve.oid();
                 writer.write_all(&[oid.len() as u8])?;
                 writer.write_all(&oid)?;
@@ -68,10 +68,10 @@ impl Serialize for PublicParams {
                 p.to_writer(writer)?;
             }
             PublicParams::ECDH {
-                ref curve,
-                ref p,
-                ref hash,
-                ref alg_sym,
+                curve,
+                p,
+                hash,
+                alg_sym,
             } => {
                 let oid = curve.oid();
                 writer.write_all(&[oid.len() as u8])?;
@@ -89,15 +89,15 @@ impl Serialize for PublicParams {
                 ])?;
             }
             PublicParams::Elgamal {
-                ref p,
-                ref g,
-                ref y,
+                p,
+                g,
+                y,
             } => {
                 p.to_writer(writer)?;
                 g.to_writer(writer)?;
                 y.to_writer(writer)?;
             }
-            PublicParams::EdDSA { ref curve, ref q } => {
+            PublicParams::EdDSA { curve, q } => {
                 let oid = curve.oid();
                 writer.write_all(&[oid.len() as u8])?;
                 writer.write_all(&oid)?;
@@ -113,16 +113,16 @@ impl Serialize for PublicParams {
 impl fmt::Debug for PublicParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PublicParams::RSA { ref n, ref e } => f
+            PublicParams::RSA { n, e } => f
                 .debug_struct("PublicParams::RSA")
                 .field("n", &n)
                 .field("e", &e)
                 .finish(),
             PublicParams::DSA {
-                ref p,
-                ref q,
-                ref g,
-                ref y,
+                p,
+                q,
+                g,
+                y,
             } => f
                 .debug_struct("PublicParams::DSA")
                 .field("p", &p)
@@ -130,14 +130,14 @@ impl fmt::Debug for PublicParams {
                 .field("g", &y)
                 .field("y", &g)
                 .finish(),
-            PublicParams::ECDSA { ref curve, ref p } => f
+            PublicParams::ECDSA { curve, p } => f
                 .debug_struct("PublicParams::ECDSA")
                 .field("curve", curve)
                 .field("p", &p)
                 .finish(),
             PublicParams::ECDH {
-                ref curve,
-                ref p,
+                curve,
+                p,
                 hash,
                 alg_sym,
             } => f
@@ -148,9 +148,9 @@ impl fmt::Debug for PublicParams {
                 .field("p", &p)
                 .finish(),
             PublicParams::Elgamal {
-                ref p,
-                ref g,
-                ref y,
+                p,
+                g,
+                y,
             } => f
                 .debug_struct("PublicParams::Elgamal")
                 .field("p", &p)
@@ -158,7 +158,7 @@ impl fmt::Debug for PublicParams {
                 .field("y", &g)
                 .finish(),
 
-            PublicParams::EdDSA { ref curve, ref q } => f
+            PublicParams::EdDSA { curve, q } => f
                 .debug_struct("PublicParams::EdDSA")
                 .field("curve", curve)
                 .field("q", &q)

@@ -171,7 +171,7 @@ mod tests {
         ]);
 
         for i in 0..n {
-            let data: Vec<u8> = (0..i).map(|_| rng.gen()).collect();
+            let data: Vec<u8> = (0..i).map(|_| rng.r#gen()).collect();
             let encoded_data = engine.encode(&data);
 
             let mut r = Base64Decoder::new_with_alphabet(Cursor::new(encoded_data), alphabet.clone());

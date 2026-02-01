@@ -182,8 +182,8 @@ macro_rules! impl_secret_key {
                 let mut signature: Option<Vec<$crate::pgp::types::Mpi>> = None;
                 self.unlock(key_pw, |priv_key| {
                     debug!("unlocked key");
-                    let sig = match *priv_key {
-                        SecretKeyRepr::RSA(ref priv_key) => {
+                    let sig = match priv_key {
+                        SecretKeyRepr::RSA(priv_key) => {
                             $crate::pgp::crypto::rsa::sign(priv_key, hash, data)
                         }
                         SecretKeyRepr::DSA(_) => unimplemented_err!("sign DSA"),
@@ -191,11 +191,11 @@ macro_rules! impl_secret_key {
                         SecretKeyRepr::ECDH(_) => {
                             bail!("ECDH can not be used to for signing operations")
                         }
-                        SecretKeyRepr::EdDSA(ref priv_key) => match self.public_params() {
-                            PublicParams::EdDSA { ref curve, ref q } => match *curve {
+                        SecretKeyRepr::EdDSA(priv_key) => match self.public_params() {
+                            PublicParams::EdDSA { curve, q } => match *curve {
                                 ECCCurve::Ed25519 => $crate::pgp::crypto::eddsa::sign(
                                     q.as_bytes(),
-                                    priv_key,
+                                    &priv_key,
                                     hash,
                                     data,
                                 ),

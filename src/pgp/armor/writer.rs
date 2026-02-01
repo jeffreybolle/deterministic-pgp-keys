@@ -102,7 +102,7 @@ mod tests {
         ]);
 
         for i in 2..1024 {
-            let buf: Vec<u8> = (0..i).map(|_| rng.gen()).collect();
+            let buf: Vec<u8> = (0..i).map(|_| rng.r#gen()).collect();
             let source = TestSource::new(buf);
 
             let mut dest = Vec::with_capacity(2 * i);

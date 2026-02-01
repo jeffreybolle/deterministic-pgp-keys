@@ -555,8 +555,8 @@ mod tests {
 
                 // Protected
                 for i in 1..1024 {
-                    let data = (0..i).map(|_| rng.gen()).collect::<Vec<_>>();
-                    let key = (0..$alg.key_size()).map(|_| rng.gen()).collect::<Vec<_>>();
+                    let data = (0..i).map(|_| rng.r#gen()).collect::<Vec<_>>();
+                    let key = (0..$alg.key_size()).map(|_| rng.r#gen()).collect::<Vec<_>>();
 
                     let mut ciphertext = $alg.encrypt_protected(&key, &data).unwrap();
                     assert_ne!(data, ciphertext);

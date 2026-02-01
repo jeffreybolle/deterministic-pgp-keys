@@ -553,7 +553,7 @@ impl Message {
                 bail!("not encrypted");
             }
             Message::Signed { message, .. } => match message {
-                Some(ref message) => message.decrypt_with_password(msg_pw),
+                Some(message) => message.decrypt_with_password(msg_pw),
                 None => bail!("not encrypted"),
             },
             Message::Encrypted { esk, edata, .. } => {
@@ -596,7 +596,7 @@ impl Message {
 
     pub fn get_literal(&self) -> Option<&LiteralData> {
         match self {
-            Message::Literal(ref data) => Some(data),
+            Message::Literal(data) => Some(data),
             Message::Signed { message, .. } => message.as_ref().and_then(|msg| msg.get_literal()),
             _ => None,
         }
@@ -605,7 +605,7 @@ impl Message {
     /// Returns the underlying content and `None` if the message is encrypted.
     pub fn get_content(&self) -> Result<Option<Vec<u8>>> {
         match self {
-            Message::Literal(ref data) => Ok(Some(data.data().to_vec())),
+            Message::Literal(data) => Ok(Some(data.data().to_vec())),
             Message::Signed { message, .. } => Ok(message
                 .as_ref()
                 .and_then(|m| m.get_literal())

@@ -125,7 +125,7 @@ impl<'a> PlainSecretParamsRef<'a> {
     pub fn as_repr(&self, public_params: &PublicParams) -> Result<SecretKeyRepr> {
         match self {
             PlainSecretParamsRef::RSA { d, p, q, .. } => match public_params {
-                PublicParams::RSA { ref n, ref e } => {
+                PublicParams::RSA { n, e } => {
                     let secret_key = RsaPrivateKey::from_components(
                         n.into(),
                         e.into(),
@@ -139,9 +139,9 @@ impl<'a> PlainSecretParamsRef<'a> {
             },
             PlainSecretParamsRef::ECDH(d) => match public_params {
                 PublicParams::ECDH {
-                    ref curve,
-                    ref hash,
-                    ref alg_sym,
+                    curve,
+                    hash,
+                    alg_sym,
                     ..
                 } => match *curve {
                     ECCCurve::Curve25519 => {
@@ -162,7 +162,7 @@ impl<'a> PlainSecretParamsRef<'a> {
                 _ => unreachable!("inconsistent key state"),
             },
             PlainSecretParamsRef::EdDSA(d) => match public_params {
-                PublicParams::EdDSA { ref curve, .. } => match *curve {
+                PublicParams::EdDSA { curve, .. } => match *curve {
                     ECCCurve::Ed25519 => {
                         ensure!(d.len() <= 32, "invalid secret");
 

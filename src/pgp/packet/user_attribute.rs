@@ -52,11 +52,11 @@ impl UserAttribute {
 
     pub fn packet_len(&self) -> usize {
         match self {
-            UserAttribute::Image { ref data, .. } => {
+            UserAttribute::Image { data, .. } => {
                 // typ + image header + data length
                 1 + 16 + data.len()
             }
-            UserAttribute::Unknown { ref data, .. } => {
+            UserAttribute::Unknown { data, .. } => {
                 // typ + data length
                 1 + data.len()
             }
@@ -145,8 +145,8 @@ impl Serialize for UserAttribute {
 
         match self {
             UserAttribute::Image {
-                ref data,
-                ref header,
+                data,
+                header,
                 ..
             } => {
                 // typ: image
@@ -157,7 +157,7 @@ impl Serialize for UserAttribute {
                 // actual data
                 writer.write_all(data)?;
             }
-            UserAttribute::Unknown { ref data, typ, .. } => {
+            UserAttribute::Unknown { data, typ, .. } => {
                 writer.write_all(&[*typ])?;
                 writer.write_all(data)?;
             }
@@ -170,15 +170,15 @@ impl fmt::Debug for UserAttribute {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UserAttribute::Image {
-                ref header,
-                ref data,
+                header,
+                data,
                 ..
             } => f
                 .debug_struct("UserAttribute::Image")
                 .field("header", &hex::encode(header))
                 .field("data", &hex::encode(data))
                 .finish(),
-            UserAttribute::Unknown { typ, ref data, .. } => f
+            UserAttribute::Unknown { typ, data, .. } => f
                 .debug_struct("UserAttribute::Image")
                 .field("type", &hex::encode([*typ]))
                 .field("data", &hex::encode(data))
