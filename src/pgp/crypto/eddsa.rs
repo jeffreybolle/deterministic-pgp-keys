@@ -1,4 +1,3 @@
-use ed25519_dalek::Keypair;
 use rand::{CryptoRng, Rng};
 use signature::{Signer, Verifier};
 use zeroize::{Zeroize, Zeroizing};
@@ -11,11 +10,8 @@ use crate::pgp::types::{EdDSASecretKey, Mpi, PlainSecretParams, PublicParams};
 pub fn generate_key<R: Rng + CryptoRng>(rng: &mut R) -> (PublicParams, PlainSecretParams) {
     let mut bytes = Zeroizing::new([0u8; ed25519_dalek::SECRET_KEY_LENGTH]);
     rng.fill_bytes(&mut *bytes);
-    let secret = ed25519_dalek::SecretKey::from_bytes(&*bytes).expect("hard coded length");
-    let public = ed25519_dalek::PublicKey::from(&secret);
-
-    let keypair = Keypair { secret, public };
-    let mut bytes = keypair.to_bytes();
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&*bytes);
+    let mut bytes = signing_key.to_keypair_bytes();
 
     // public key
     let mut q = Vec::with_capacity(33);
@@ -55,13 +51,13 @@ pub fn verify(
             ensure_eq!(q.len(), 33, "invalid Q (len)");
             ensure_eq!(q[0], 0x40, "invalid Q (prefix)");
 
-            let pk = ed25519_dalek::PublicKey::from_bytes(&q[1..])?;
+            let pk = ed25519_dalek::VerifyingKey::try_from(&q[1..])?;
             let mut sig_bytes = vec![0u8; 64];
             // add padding if the values were encoded short
             sig_bytes[(32 - r.len())..32].copy_from_slice(r);
             sig_bytes[32 + (32 - s.len())..].copy_from_slice(s);
 
-            let sig = ed25519_dalek::Signature::from_bytes(&sig_bytes)?;
+            let sig = ed25519_dalek::Signature::try_from(&sig_bytes[..])?;
 
             pk.verify(hashed, &sig)?;
 
@@ -81,10 +77,10 @@ pub fn sign(
     ensure_eq!(q.len(), 33, "invalid Q (len)");
     ensure_eq!(q[0], 0x40, "invalid Q (prefix)");
 
-    let mut kp_bytes = vec![0u8; 64];
+    let mut kp_bytes: [u8; 64] = [0u8; 64];
     kp_bytes[..32].copy_from_slice(&secret_key.secret);
     kp_bytes[32..].copy_from_slice(&q[1..]);
-    let kp = ed25519_dalek::Keypair::from_bytes(&kp_bytes)?;
+    let kp = ed25519_dalek::SigningKey::from_keypair_bytes(&kp_bytes)?;
 
     let signature = kp.sign(digest);
     let bytes = signature.to_bytes();
