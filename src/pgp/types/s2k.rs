@@ -1,6 +1,11 @@
 use std::io;
 
-use nom::be_u8;
+use nom::{
+    bytes::complete::take,
+    combinator::{cond, map, map_opt},
+    number::complete::be_u8,
+    IResult, Parser,
+};
 use num_traits::FromPrimitive;
 use rand::{CryptoRng, Rng};
 
@@ -180,19 +185,13 @@ fn has_count(typ: StringToKeyType) -> bool {
     matches!(typ, StringToKeyType::IteratedAndSalted)
 }
 
-#[rustfmt::skip]
-named!(pub s2k_parser<StringToKey>, do_parse!(
-         typ: map_opt!(be_u8, StringToKeyType::from_u8)
-    >>  hash: map_opt!(be_u8, HashAlgorithm::from_u8)
-    >>  salt: cond!(has_salt(typ), map!(take!(8), |v| v.to_vec()))
-    >> count: cond!(has_count(typ), be_u8)
-    >> (StringToKey {
-        typ,
-        hash,
-        salt,
-        count,
-    })
-));
+pub fn s2k_parser(input: &[u8]) -> IResult<&[u8], StringToKey> {
+    let (input, typ) = map_opt(be_u8, StringToKeyType::from_u8).parse(input)?;
+    let (input, hash) = map_opt(be_u8, HashAlgorithm::from_u8).parse(input)?;
+    let (input, salt) = cond(has_salt(typ), map(take(8usize), |v: &[u8]| v.to_vec())).parse(input)?;
+    let (input, count) = cond(has_count(typ), be_u8).parse(input)?;
+    Ok((input, StringToKey { typ, hash, salt, count }))
+}
 
 impl Serialize for StringToKey {
     fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<()> {

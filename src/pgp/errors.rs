@@ -2,15 +2,12 @@ use ed25519_dalek::SignatureError;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-// custom nom error types
-pub const MPI_TOO_LONG: u32 = 1000;
-
 /// Error types
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("failed to parse {0:?}")]
-    ParsingError(nom::ErrorKind),
+    ParsingError(nom::error::ErrorKind),
     #[error("invalid input")]
     InvalidInput,
     #[error("incomplete input: {0:?}")]
@@ -48,7 +45,7 @@ pub enum Error {
     #[error("{0:?}")]
     Message(String),
     #[error("Invalid Packet {0:?}")]
-    PacketError(nom::ErrorKind),
+    PacketError(nom::error::ErrorKind),
     #[error("Incomplete Packet")]
     PacketIncomplete,
     #[error("Unpadding failed")]
@@ -102,36 +99,30 @@ impl Error {
     }
 }
 
-impl<'a> From<nom::Err<&'a [u8]>> for Error {
-    fn from(err: nom::Err<&'a [u8]>) -> Error {
+impl<'a> From<nom::Err<nom::error::Error<&'a [u8]>>> for Error {
+    fn from(err: nom::Err<nom::error::Error<&'a [u8]>>) -> Error {
         match err {
             nom::Err::Incomplete(n) => Error::Incomplete(n),
-            _ => Error::ParsingError(err.into_error_kind()),
+            nom::Err::Error(e) | nom::Err::Failure(e) => Error::ParsingError(e.code),
         }
     }
 }
 
-impl<'a> From<nom::Err<nom::types::CompleteStr<'a>>> for Error {
-    fn from(err: nom::Err<nom::types::CompleteStr<'a>>) -> Error {
-        match err {
-            nom::Err::Incomplete(n) => Error::Incomplete(n),
-            _ => Error::ParsingError(err.into_error_kind()),
-        }
-    }
-}
-
-impl<'a> From<Error> for nom::Err<&'a [u8]> {
-    fn from(err: Error) -> nom::Err<&'a [u8]> {
-        nom::Err::Error(nom::Context::Code(
+impl<'a> From<Error> for nom::Err<nom::error::Error<&'a [u8]>> {
+    fn from(_err: Error) -> nom::Err<nom::error::Error<&'a [u8]>> {
+        nom::Err::Error(nom::error::Error::new(
             &b""[..],
-            nom::ErrorKind::Custom(err.as_code()),
+            nom::error::ErrorKind::Fail,
         ))
     }
 }
 
-impl<'a> From<nom::Err<&'a str>> for Error {
-    fn from(err: nom::Err<&'a str>) -> Error {
-        Error::ParsingError(err.into_error_kind())
+impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error {
+    fn from(err: nom::Err<nom::error::Error<&'a str>>) -> Error {
+        match err {
+            nom::Err::Incomplete(n) => Error::Incomplete(n),
+            nom::Err::Error(e) | nom::Err::Failure(e) => Error::ParsingError(e.code),
+        }
     }
 }
 

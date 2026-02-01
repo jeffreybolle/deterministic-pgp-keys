@@ -1,6 +1,10 @@
 use std::io;
 
-use nom::{be_u8, rest};
+use nom::{
+    combinator::{map_opt, rest},
+    number::complete::be_u8,
+    IResult, Parser,
+};
 use num_traits::FromPrimitive;
 
 use crate::pgp::crypto::sym::SymmetricKeyAlgorithm;
@@ -23,7 +27,7 @@ pub struct SymKeyEncryptedSessionKey {
 impl SymKeyEncryptedSessionKey {
     /// Parses a `SymKeyEncryptedSessionKey` packet from the given slice.
     pub fn from_slice(version: Version, input: &[u8]) -> Result<Self> {
-        let (_, pk) = parse(input, version)?;
+        let (_, pk) = parse(version)(input)?;
 
         ensure!(
             pk.version == 0x04 || pk.version == 0x05,
@@ -79,28 +83,31 @@ impl SymKeyEncryptedSessionKey {
     }
 }
 
-#[rustfmt::skip]
-named_args!(parse(packet_version: Version) <SymKeyEncryptedSessionKey>, do_parse!(
-              version: be_u8
-    >>        sym_alg: map_opt!(be_u8, SymmetricKeyAlgorithm::from_u8)
-    >>            s2k: s2k_parser
-    >>  encrypted_key: rest
-    >> ({
-        let encrypted_key = if encrypted_key.is_empty() {
+fn parse(packet_version: Version) -> impl Fn(&[u8]) -> IResult<&[u8], SymKeyEncryptedSessionKey> {
+    move |input| {
+        let (input, version) = be_u8(input)?;
+        let (input, sym_alg) = map_opt(be_u8, SymmetricKeyAlgorithm::from_u8).parse(input)?;
+        let (input, s2k) = s2k_parser(input)?;
+        let (input, encrypted_key_raw) = rest(input)?;
+
+        let encrypted_key = if encrypted_key_raw.is_empty() {
             None
         } else {
-            Some(encrypted_key.to_vec())
+            Some(encrypted_key_raw.to_vec())
         };
 
-        SymKeyEncryptedSessionKey {
-            packet_version,
-            version,
-            sym_algorithm: sym_alg,
-            s2k,
-            encrypted_key,
-        }
-    })
-));
+        Ok((
+            input,
+            SymKeyEncryptedSessionKey {
+                packet_version,
+                version,
+                sym_algorithm: sym_alg,
+                s2k,
+                encrypted_key,
+            },
+        ))
+    }
+}
 
 impl Serialize for SymKeyEncryptedSessionKey {
     fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<()> {

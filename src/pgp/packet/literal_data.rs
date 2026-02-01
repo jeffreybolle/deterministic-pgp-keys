@@ -2,7 +2,13 @@ use std::{fmt, io};
 
 use byteorder::{BigEndian, WriteBytesExt};
 use chrono::{DateTime, SubsecRound, TimeZone, Utc};
-use nom::{be_u32, be_u8, rest};
+use nom::{
+    bytes::complete::take,
+    combinator::{map, map_opt, rest},
+    number::complete::{be_u32, be_u8},
+    IResult,
+    Parser,
+};
 use num_traits::FromPrimitive;
 
 use crate::pgp::errors::Result;
@@ -62,7 +68,7 @@ impl LiteralData {
 
     /// Parses a `LiteralData` packet from the given slice.
     pub fn from_slice(packet_version: Version, input: &[u8]) -> Result<Self> {
-        let (_, pk) = parse(input, packet_version)?;
+        let (_, pk) = parse(packet_version)(input)?;
 
         Ok(pk)
     }
@@ -100,21 +106,27 @@ impl Serialize for LiteralData {
     }
 }
 
-#[rustfmt::skip]
-named_args!(parse(packet_version: Version)<LiteralData>, do_parse!(
-           mode: map_opt!(be_u8, DataMode::from_u8)
-    >> name_len: be_u8
-    >>     name: map!(take!(name_len), read_string)
-    >>  created: map!(be_u32, |v| Utc.timestamp_opt(i64::from(v), 0).unwrap())
-    >>     data: rest
-    >> (LiteralData {
-            packet_version,
-            mode,
-            created,
-            file_name: name,
-            data: data.to_vec(),
-    })
-));
+fn parse(
+    packet_version: Version,
+) -> impl Fn(&[u8]) -> IResult<&[u8], LiteralData> {
+    move |input| {
+        let (input, mode) = map_opt(be_u8, DataMode::from_u8).parse(input)?;
+        let (input, name_len) = be_u8(input)?;
+        let (input, name) = map(take(name_len), read_string).parse(input)?;
+        let (input, created) = map(be_u32, |v| Utc.timestamp_opt(i64::from(v), 0).unwrap()).parse(input)?;
+        let (input, data) = rest(input)?;
+        Ok((
+            input,
+            LiteralData {
+                packet_version,
+                mode,
+                created,
+                file_name: name,
+                data: data.to_vec(),
+            },
+        ))
+    }
+}
 
 impl PacketTrait for LiteralData {
     fn packet_version(&self) -> Version {

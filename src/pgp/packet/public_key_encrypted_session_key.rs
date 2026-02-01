@@ -1,7 +1,12 @@
 use std::io;
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
-use nom::be_u8;
+use nom::{
+    bytes::complete::take,
+    combinator::{map, map_opt, map_res, success},
+    number::complete::be_u8,
+    IResult, Parser,
+};
 use num_traits::FromPrimitive;
 use rand::{CryptoRng, Rng};
 
@@ -25,7 +30,7 @@ pub struct PublicKeyEncryptedSessionKey {
 impl PublicKeyEncryptedSessionKey {
     /// Parses a `PublicKeyEncryptedSessionKey` packet from the given slice.
     pub fn from_slice(version: Version, input: &[u8]) -> Result<Self> {
-        let (_, pk) = parse(input, version)?;
+        let (_, pk) = parse(version)(input)?;
 
         ensure_eq!(pk.version, 3, "invalid version");
 
@@ -75,51 +80,56 @@ impl PublicKeyEncryptedSessionKey {
     }
 }
 
-#[rustfmt::skip]
-named_args!(parse_mpis<'a>(alg: &'a PublicKeyAlgorithm) <Vec<Mpi>>, switch!(
-    value!(alg),
-    &PublicKeyAlgorithm::RSA |
-    &PublicKeyAlgorithm::RSASign |
-    &PublicKeyAlgorithm::RSAEncrypt => map!(mpi, |v| vec![v.to_owned()]) |
-    &PublicKeyAlgorithm::Elgamal |
-    &PublicKeyAlgorithm::ElgamalSign => do_parse!(
-          first: mpi
-      >> second: mpi
-      >> (vec![first.to_owned(), second.to_owned()])
-    ) |
-    &PublicKeyAlgorithm::ECDSA |
-    &PublicKeyAlgorithm::DSA |
-    &PublicKeyAlgorithm::DiffieHellman => value!(Vec::new())|
-    &PublicKeyAlgorithm::ECDH => do_parse!(
-           a: mpi
-        >> blen: be_u8
-        >> b: take!(blen)
-        >> ({
+fn parse_mpis(alg: PublicKeyAlgorithm) -> impl Fn(&[u8]) -> IResult<&[u8], Vec<Mpi>> {
+    move |input| match alg {
+        PublicKeyAlgorithm::RSA
+        | PublicKeyAlgorithm::RSASign
+        | PublicKeyAlgorithm::RSAEncrypt => map(mpi, |v| vec![v.to_owned()]).parse(input),
+        PublicKeyAlgorithm::Elgamal | PublicKeyAlgorithm::ElgamalSign => {
+            let (input, first) = mpi(input)?;
+            let (input, second) = mpi(input)?;
+            Ok((input, vec![first.to_owned(), second.to_owned()]))
+        }
+        PublicKeyAlgorithm::ECDSA | PublicKeyAlgorithm::DSA | PublicKeyAlgorithm::DiffieHellman => {
+            success(Vec::new()).parse(input)
+        }
+        PublicKeyAlgorithm::ECDH => {
+            let (input, a) = mpi(input)?;
+            let (input, blen) = be_u8(input)?;
+            let (input, b) = take(blen)(input)?;
             let v: [u8; 1] = [blen];
-            vec![a.to_owned(), (&v[..]).into(), b.into()]
-        })
-    )
-));
+            Ok((input, vec![a.to_owned(), (&v[..]).into(), b.into()]))
+        }
+        _ => Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Switch,
+        ))),
+    }
+}
 
 // Parses a Public-Key Encrypted Session Key Packets
-#[rustfmt::skip]
-named_args!(parse(packet_version: Version) <PublicKeyEncryptedSessionKey>, do_parse!(
-    // version, only 3 is allowed
-       version: be_u8
-    // the key id this maps to
-    >>     id: map_res!(take!(8), KeyId::from_slice)
-    // the symmetric key algorithm
-    >>    alg: map_opt!(be_u8, PublicKeyAlgorithm::from_u8)
-    // key algorithm specific data
-    >>   mpis: call!(parse_mpis, &alg)
-    >> (PublicKeyEncryptedSessionKey {
-        packet_version,
-        version,
-        id,
-        algorithm: alg,
-        mpis,
-    })
-));
+fn parse(packet_version: Version) -> impl Fn(&[u8]) -> IResult<&[u8], PublicKeyEncryptedSessionKey> {
+    move |input| {
+        // version, only 3 is allowed
+        let (input, version) = be_u8(input)?;
+        // the key id this maps to
+        let (input, id) = map_res(take(8usize), KeyId::from_slice).parse(input)?;
+        // the symmetric key algorithm
+        let (input, alg) = map_opt(be_u8, PublicKeyAlgorithm::from_u8).parse(input)?;
+        // key algorithm specific data
+        let (input, mpis) = parse_mpis(alg)(input)?;
+        Ok((
+            input,
+            PublicKeyEncryptedSessionKey {
+                packet_version,
+                version,
+                id,
+                algorithm: alg,
+                mpis,
+            },
+        ))
+    }
+}
 
 impl Serialize for PublicKeyEncryptedSessionKey {
     fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<()> {

@@ -1,7 +1,12 @@
 use std::{fmt, io};
 
 use byteorder::{BigEndian, WriteBytesExt};
-use nom::{self, be_u16, Err, InputIter, InputTake};
+use nom::{
+    bytes::complete::take,
+    error::{Error, ErrorKind},
+    number::complete::be_u16,
+    Err, IResult,
+};
 use num_bigint::BigUint;
 use zeroize::Zeroize;
 
@@ -28,29 +33,19 @@ const MAX_EXTERN_MPI_BITS: u32 = 16384;
 /// );
 /// ```
 ///
-pub fn mpi(input: &[u8]) -> nom::IResult<&[u8], MpiRef<'_>> {
-    let (number, len) = be_u16(input)?;
+pub fn mpi(input: &[u8]) -> IResult<&[u8], MpiRef<'_>> {
+    let (rest, len) = be_u16(input)?;
 
     let bits = u32::from(len);
     let len_actual = (bits + 7) >> 3;
 
     if len_actual > MAX_EXTERN_MPI_BITS {
-        Err(Err::Error(error_position!(
-            input,
-            nom::ErrorKind::Custom(errors::MPI_TOO_LONG)
-        )))
+        Err(Err::Error(Error::new(input, ErrorKind::Fail)))
     } else {
-        // same as take!
         let cnt = len_actual as usize;
-        match number.slice_index(cnt) {
-            None => nom::need_more(number, nom::Needed::Size(cnt)),
-            Some(index) => {
-                let (rest, n) = number.take_split(index);
-                let n_stripped = strip_leading_zeros(n).into();
-
-                Ok((rest, n_stripped))
-            }
-        }
+        let (rest, n) = take(cnt)(rest)?;
+        let n_stripped = strip_leading_zeros(n).into();
+        Ok((rest, n_stripped))
     }
 }
 

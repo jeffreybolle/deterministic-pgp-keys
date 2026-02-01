@@ -1,7 +1,11 @@
-// comes from inside somewhere of nom
-#![allow(clippy::useless_let_if_seq)]
-
-use nom::{self, be_u32, be_u8, Err, IResult};
+use nom::{
+    bits::complete::{tag as tag_bits, take as take_bits},
+    branch::alt,
+    bytes::complete::take,
+    combinator::{map, map_opt},
+    number::complete::{be_u32, be_u8},
+    Err, IResult, Parser,
+};
 use num_traits::FromPrimitive;
 
 use crate::pgp::de::Deserialize;
@@ -16,51 +20,65 @@ use crate::pgp::packet::{
 use crate::pgp::types::{PacketLength, Tag, Version};
 use crate::pgp::util::{u16_as_usize, u32_as_usize, u8_as_usize};
 
+type BitInput<'a> = (&'a [u8], usize);
+
 // Parses an old format packet header
 // Ref: https://tools.ietf.org/html/rfc4880.html#section-4.2.1
-#[rustfmt::skip]
-named!(old_packet_header(&[u8]) -> (Version, Tag, PacketLength), bits!(do_parse!(
+fn old_packet_header_bits(input: BitInput<'_>) -> IResult<BitInput<'_>, (Version, Tag, PacketLength)> {
     // First bit is always 1
-            tag_bits!(u8, 1, 1)
+    let (input, _): (_, u8) = tag_bits(1u8, 1usize).parse(input)?;
     // Version: 0
-    >> ver: map_opt!(tag_bits!(u8, 1, 0), Version::from_u8)
+    let (input, ver) = map_opt(|i| tag_bits(0u8, 1usize).parse(i), |v: u8| Version::from_u8(v)).parse(input)?;
     // Packet Tag
-    >> tag: map_opt!(take_bits!(u8, 4), Tag::from_u8)
+    let (input, tag) = map_opt(take_bits(4usize), Tag::from_u8).parse(input)?;
     // Packet Length Type
-    >> len_type: take_bits!(u8, 2)
-    >> len: switch!(value!(len_type),
+    let (input, len_type): (_, u8) = take_bits(2usize).parse(input)?;
+    let (input, len) = match len_type {
         // One-Octet Lengths
-        0 => map!(take_bits!(u8, 8), |val| u8_as_usize(val).into())    |
+        0 => {
+            let (i, val): (_, u8) = take_bits(8usize).parse(input)?;
+            (i, u8_as_usize(val).into())
+        }
         // Two-Octet Lengths
-        1 => map!(take_bits!(u16, 16), |val| u16_as_usize(val).into()) |
+        1 => {
+            let (i, val): (_, u16) = take_bits(16usize).parse(input)?;
+            (i, u16_as_usize(val).into())
+        }
         // Four-Octet Lengths
-        2 => map!(take_bits!(u32, 32), |val| u32_as_usize(val).into()) |
-        3 => value!(PacketLength::Indeterminated)
-    )
-    >> ((ver, tag, len))
-)));
+        2 => {
+            let (i, val): (_, u32) = take_bits(32usize).parse(input)?;
+            (i, u32_as_usize(val).into())
+        }
+        3 => (input, PacketLength::Indeterminated),
+        _ => unreachable!(),
+    };
+    Ok((input, (ver, tag, len)))
+}
 
-#[rustfmt::skip]
-named!(read_packet_len(&[u8]) -> PacketLength, do_parse!(
-       olen: be_u8
-    >>  len: switch!(value!(olen),
-               // One-Octet Lengths
-               0..=191   => value!((olen as usize).into()) |
-               // Two-Octet Lengths
-               192..=223 => map!(be_u8, |a| {
-                   (((olen as usize - 192) << 8) + 192 + a as usize).into()
-               }) |
-               // Partial Body Lengths
-               224..=254 => value!(PacketLength::Partial(1 << (olen as usize & 0x1F))) |
-               // Five-Octet Lengths
-               255       => map!(be_u32, |v| u32_as_usize(v).into())
-    )
-    >> (len)
-));
+fn old_packet_header(input: &[u8]) -> IResult<&[u8], (Version, Tag, PacketLength)> {
+    nom::bits::bits(old_packet_header_bits)(input)
+}
+
+fn read_packet_len(input: &[u8]) -> IResult<&[u8], PacketLength> {
+    let (input, olen) = be_u8(input)?;
+    match olen {
+        // One-Octet Lengths
+        0..=191 => Ok((input, (olen as usize).into())),
+        // Two-Octet Lengths
+        192..=223 => {
+            let (input, a) = be_u8(input)?;
+            Ok((input, (((olen as usize - 192) << 8) + 192 + a as usize).into()))
+        }
+        // Partial Body Lengths
+        224..=254 => Ok((input, PacketLength::Partial(1 << (olen as usize & 0x1F)))),
+        // Five-Octet Lengths
+        255 => map(be_u32, |v| u32_as_usize(v).into()).parse(input),
+    }
+}
 
 fn read_partial_bodies(input: &[u8], len: usize) -> IResult<&[u8], ParseResult<'_>> {
     if input.len() < len {
-        return Err(Err::Incomplete(nom::Needed::Size(len - input.len())));
+        return Err(Err::Incomplete(nom::Needed::new(len - input.len())));
     }
 
     let mut out = vec![&input[0..len]];
@@ -72,14 +90,14 @@ fn read_partial_bodies(input: &[u8], len: usize) -> IResult<&[u8], ParseResult<'
         match res.1 {
             PacketLength::Partial(len) => {
                 if res.0.len() < len {
-                    return Err(Err::Incomplete(nom::Needed::Size(len - res.0.len())));
+                    return Err(Err::Incomplete(nom::Needed::new(len - res.0.len())));
                 }
                 out.push(&res.0[0..len]);
                 rest = &res.0[len..];
             }
             PacketLength::Fixed(len) => {
                 if res.0.len() < len {
-                    return Err(Err::Incomplete(nom::Needed::Size(len - res.0.len())));
+                    return Err(Err::Incomplete(nom::Needed::new(len - res.0.len())));
                 }
 
                 out.push(&res.0[0..len]);
@@ -104,17 +122,24 @@ fn read_partial_bodies(input: &[u8], len: usize) -> IResult<&[u8], ParseResult<'
 
 // Parses a new format packet header
 // Ref: https://tools.ietf.org/html/rfc4880.html#section-4.2.2
-#[rustfmt::skip]
-named!(new_packet_header(&[u8]) -> (Version, Tag, PacketLength), bits!(do_parse!(
+fn new_packet_header_bits(input: BitInput<'_>) -> IResult<BitInput<'_>, (Version, Tag, Option<PacketLength>)> {
     // First bit is always 1
-             tag_bits!(u8, 1, 1)
+    let (input, _): (_, u8) = tag_bits(1u8, 1usize).parse(input)?;
     // Version: 1
-    >>  ver: map_opt!(tag_bits!(u8, 1, 1), Version::from_u8)
+    let (input, ver) = map_opt(|i| tag_bits(1u8, 1usize).parse(i), |v: u8| Version::from_u8(v)).parse(input)?;
     // Packet Tag
-    >>  tag: map_opt!(take_bits!(u8, 6), Tag::from_u8)
-    >> len: bytes!(read_packet_len)
-    >> ((ver, tag, len))
-)));
+    let (input, tag) = map_opt(take_bits(6usize), Tag::from_u8).parse(input)?;
+    // Return None for len - we'll parse it after converting back to bytes
+    Ok((input, (ver, tag, None)))
+}
+
+fn new_packet_header(input: &[u8]) -> IResult<&[u8], (Version, Tag, PacketLength)> {
+    // First parse the bits part (first byte)
+    let (input, (ver, tag, _)) = nom::bits::bits(new_packet_header_bits)(input)?;
+    // Then parse the length as bytes
+    let (input, len) = read_packet_len(input)?;
+    Ok((input, (ver, tag, len)))
+}
 
 #[derive(Debug)]
 pub enum ParseResult<'a> {
@@ -125,16 +150,18 @@ pub enum ParseResult<'a> {
 
 // Parse a single Packet
 // https://tools.ietf.org/html/rfc4880.html#section-4.2
-#[rustfmt::skip]
-named!(pub parser<(Version, Tag, PacketLength, ParseResult<'_>)>, do_parse!(
-       head: alt!(new_packet_header | old_packet_header)
-    >> body: switch!(value!(&head.2),
-        PacketLength::Fixed(length)   => map!(take!(*length), ParseResult::Fixed) |
-        PacketLength::Indeterminated  => value!(ParseResult::Indeterminated) |
-        PacketLength::Partial(length) => call!(read_partial_bodies, *length)
-    )
-    >> (head.0, head.1, head.2, body)
-));
+pub fn parser(input: &[u8]) -> IResult<&[u8], (Version, Tag, PacketLength, ParseResult<'_>)> {
+    let (input, head) = alt((new_packet_header, old_packet_header)).parse(input)?;
+    let (input, body) = match &head.2 {
+        PacketLength::Fixed(length) => {
+            let (input, data) = take(*length)(input)?;
+            (input, ParseResult::Fixed(data))
+        }
+        PacketLength::Indeterminated => (input, ParseResult::Indeterminated),
+        PacketLength::Partial(length) => read_partial_bodies(input, *length)?,
+    };
+    Ok((input, (head.0, head.1, head.2, body)))
+}
 
 pub fn body_parser(ver: Version, tag: Tag, body: &[u8]) -> Result<Packet> {
     let res: Result<Packet> = match tag {

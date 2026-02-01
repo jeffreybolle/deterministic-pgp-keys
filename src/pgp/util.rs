@@ -1,14 +1,17 @@
 //! # Utilities
 
 use std::convert::AsMut;
-use std::ops::{Range, RangeFrom, RangeTo};
 use std::{hash, io};
 
 use byteorder::{BigEndian, WriteBytesExt};
-use nom::types::{CompleteByteSlice, CompleteStr};
 use nom::{
-    self, be_u32, be_u8, eol, is_alphanumeric, line_ending, Err, IResult, InputIter, InputLength,
-    Slice,
+    bytes::complete::take_while1,
+    character::complete::line_ending,
+    combinator::map,
+    multi::many0,
+    number::complete::{be_u32, be_u8},
+    IResult,
+    Parser,
 };
 
 use crate::pgp::errors;
@@ -30,35 +33,17 @@ pub fn u32_as_usize(a: u32) -> usize {
 
 #[inline]
 pub fn is_base64_token(c: u8) -> bool {
-    is_alphanumeric(c) || c == b'/' || c == b'+' || c == b'=' || c == b'\n' || c == b'\r'
+    c.is_ascii_alphanumeric() || c == b'/' || c == b'+' || c == b'=' || c == b'\n' || c == b'\r'
 }
 
-named!(pub prefixed<CompleteByteSlice<'_>, CompleteByteSlice<'_>>, do_parse!(
-             many0!(line_ending)
-    >> rest: take_while1!(is_base64_token)
-    >> (rest)
-));
+pub fn prefixed(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    let (input, _) = many0(line_ending).parse(input)?;
+    take_while1(is_base64_token)(input)
+}
 
 /// Recognizes one or more body tokens
-pub fn base64_token(input: &[u8]) -> nom::IResult<&[u8], &[u8]> {
-    let input_length = input.input_len();
-    if input_length == 0 {
-        return Err(Err::Incomplete(nom::Needed::Unknown));
-    }
-
-    for (idx, item) in input.iter_indices() {
-        if !is_base64_token(item) {
-            if idx == 0 {
-                return Err(Err::Error(error_position!(
-                    input,
-                    nom::ErrorKind::AlphaNumeric
-                )));
-            } else {
-                return Ok((input.slice(idx..), input.slice(0..idx)));
-            }
-        }
-    }
-    Ok((input.slice(input_length..), input))
+pub fn base64_token(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    take_while1(is_base64_token)(input)
 }
 
 /// Returns the bit length of a given slice.
@@ -100,21 +85,20 @@ where
 }
 
 // Parse a packet length.
-#[rustfmt::skip]
-named!(pub packet_length<usize>, do_parse!(
-       olen: be_u8
-    >>  len: switch!(value!(olen),
-                     // One-Octet Lengths
-                     0..=191   => value!(olen as usize) |
-                     // Two-Octet Lengths
-                     192..=254 => map!(be_u8, |a| {
-                         ((olen as usize - 192) << 8) + 192 + a as usize
-                     }) |
-                     // Five-Octet Lengths
-                     255       => map!(be_u32, u32_as_usize)
-    )
-    >> (len)
-));
+pub fn packet_length(input: &[u8]) -> IResult<&[u8], usize> {
+    let (input, olen) = be_u8(input)?;
+    match olen {
+        // One-Octet Lengths
+        0..=191 => Ok((input, olen as usize)),
+        // Two-Octet Lengths
+        192..=254 => {
+            let (input, a) = be_u8(input)?;
+            Ok((input, ((olen as usize - 192) << 8) + 192 + a as usize))
+        }
+        // Five-Octet Lengths
+        255 => map(be_u32, u32_as_usize).parse(input),
+    }
+}
 
 /// Write packet length, including the prefix.
 pub fn write_packet_length(len: usize, writer: &mut impl io::Write) -> errors::Result<()> {
@@ -140,20 +124,16 @@ pub fn write_packet_len(len: usize, writer: &mut impl io::Write) -> errors::Resu
     Ok(())
 }
 
-pub fn end_of_line(input: CompleteStr<'_>) -> IResult<CompleteStr<'_>, CompleteStr<'_>> {
-    alt!(input, eof!() | eol)
+pub fn end_of_line(input: &str) -> IResult<&str, &str> {
+    use nom::branch::alt;
+    use nom::combinator::eof;
+    alt((eof, nom::character::complete::line_ending)).parse(input)
 }
 
 /// Return the length of the remaining input.
-// Adapted from https://github.com/Geal/nom/pull/684
 #[inline]
-pub fn rest_len<T>(input: T) -> IResult<T, usize>
-where
-    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-    T: InputLength,
-{
-    let len = input.input_len();
-    Ok((input, len))
+pub fn rest_len(input: &[u8]) -> usize {
+    input.len()
 }
 
 #[macro_export]

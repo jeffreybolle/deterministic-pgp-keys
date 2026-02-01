@@ -303,24 +303,48 @@ impl<'a> fmt::Debug for PlainSecretParamsRef<'a> {
     }
 }
 
-#[rustfmt::skip]
-named_args!(parse_secret_params(alg: PublicKeyAlgorithm) <PlainSecretParamsRef<'_>>, switch!(value!(alg),
-    PublicKeyAlgorithm::RSA        |
-    PublicKeyAlgorithm::RSAEncrypt |
-    PublicKeyAlgorithm::RSASign => call!(rsa_secret_params)                                |
-    PublicKeyAlgorithm::DSA     => do_parse!(x: mpi >> (PlainSecretParamsRef::DSA(x)))      |
-    PublicKeyAlgorithm::Elgamal => do_parse!(x: mpi >> (PlainSecretParamsRef::Elgamal(x)))  |
-    PublicKeyAlgorithm::ECDH    => do_parse!(x: mpi >> (PlainSecretParamsRef::ECDH(x)))  |
-    PublicKeyAlgorithm::ECDSA   => do_parse!(x: mpi >> (PlainSecretParamsRef::ECDSA(x))) |
-    PublicKeyAlgorithm::EdDSA   => do_parse!(x: mpi >> (PlainSecretParamsRef::EdDSA(x)))
-));
+use nom::{error::ErrorKind, IResult};
 
-// Parse the decrpyted private params of an RSA private key.
-#[rustfmt::skip]
-named!(rsa_secret_params<PlainSecretParamsRef<'_>>, do_parse!(
-       d: mpi
-    >> p: mpi
-    >> q: mpi
-    >> u: mpi
-    >> (PlainSecretParamsRef::RSA { d, p, q, u })
-));
+fn parse_secret_params(
+    input: &[u8],
+    alg: PublicKeyAlgorithm,
+) -> IResult<&[u8], PlainSecretParamsRef<'_>> {
+    match alg {
+        PublicKeyAlgorithm::RSA
+        | PublicKeyAlgorithm::RSAEncrypt
+        | PublicKeyAlgorithm::RSASign => rsa_secret_params(input),
+        PublicKeyAlgorithm::DSA => {
+            let (input, x) = mpi(input)?;
+            Ok((input, PlainSecretParamsRef::DSA(x)))
+        }
+        PublicKeyAlgorithm::Elgamal => {
+            let (input, x) = mpi(input)?;
+            Ok((input, PlainSecretParamsRef::Elgamal(x)))
+        }
+        PublicKeyAlgorithm::ECDH => {
+            let (input, x) = mpi(input)?;
+            Ok((input, PlainSecretParamsRef::ECDH(x)))
+        }
+        PublicKeyAlgorithm::ECDSA => {
+            let (input, x) = mpi(input)?;
+            Ok((input, PlainSecretParamsRef::ECDSA(x)))
+        }
+        PublicKeyAlgorithm::EdDSA => {
+            let (input, x) = mpi(input)?;
+            Ok((input, PlainSecretParamsRef::EdDSA(x)))
+        }
+        _ => Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            ErrorKind::Switch,
+        ))),
+    }
+}
+
+// Parse the decrypted private params of an RSA private key.
+fn rsa_secret_params(input: &[u8]) -> IResult<&[u8], PlainSecretParamsRef<'_>> {
+    let (input, d) = mpi(input)?;
+    let (input, p) = mpi(input)?;
+    let (input, q) = mpi(input)?;
+    let (input, u) = mpi(input)?;
+    Ok((input, PlainSecretParamsRef::RSA { d, p, q, u }))
+}

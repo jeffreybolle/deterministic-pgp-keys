@@ -77,9 +77,11 @@ impl<R: Read> Iterator for PacketParser<R> {
                 ParseResult::Indeterminated => {
                     let mut body = rest.to_vec();
                     inner.read_to_end(&mut body)?;
+                    // Calculate header size using offset from original buffer to rest
+                    let header_size = b.buf().offset(rest);
                     match single::body_parser(ver, tag, &body) {
                         Err(Error::Incomplete(n)) => Err(Error::Incomplete(n)),
-                        p => Ok((rest.len() + body.len(), p)),
+                        p => Ok((header_size + body.len(), p)),
                     }
                 }
                 ParseResult::Fixed(body) => {
@@ -117,7 +119,7 @@ impl<R: Read> Iterator for PacketParser<R> {
 
             // if the parser returned `Incomplete`, and it needs more data than the buffer can hold, we grow the buffer.
             if let Some(Needed::Size(sz)) = needed {
-                if b.usable_space() < sz && self.capacity * 2 < MAX_CAPACITY {
+                if b.usable_space() < sz.get() && self.capacity * 2 < MAX_CAPACITY {
                     self.capacity *= 2;
                     let capacity = self.capacity;
                     b.make_room();

@@ -4,7 +4,12 @@ use chrono::{SubsecRound, Utc};
 
 use crate::pgp::crypto::HashAlgorithm;
 use byteorder::{LittleEndian, WriteBytesExt};
-use nom::{be_u8, le_u16, rest};
+use nom::{
+    bytes::complete::take,
+    combinator::{map, rest},
+    number::complete::{be_u8, le_u16},
+    IResult, Parser,
+};
 
 use crate::pgp::errors::Result;
 use crate::pgp::packet::{
@@ -33,7 +38,7 @@ pub enum UserAttribute {
 impl UserAttribute {
     /// Parses a `UserAttribute` packet from the given slice.
     pub fn from_slice(packet_version: Version, input: &[u8]) -> Result<Self> {
-        let (_, pk) = parse(input, packet_version)?;
+        let (_, pk) = parse(packet_version)(input)?;
 
         Ok(pk)
     }
@@ -95,39 +100,43 @@ impl fmt::Display for UserAttribute {
     }
 }
 
-#[rustfmt::skip]
-named_args!(image(packet_version: Version) <UserAttribute>, do_parse!(
-    // little endian, for historical reasons..
-       header_len: le_u16
-    >>     header: take!(header_len - 2)
-    // the actual image is the rest
-    >>         img: rest
-    >> (UserAttribute::Image {
-        packet_version,
-        header: header.to_vec(),
-        data: img.to_vec()
-    })
-));
-
-#[rustfmt::skip]
-named_args!(parse(packet_version: Version) <UserAttribute>, do_parse!(
-        len: packet_length
-    >>  typ: be_u8
-    >> attr: flat_map!(
-        take!(len-1),
-        switch!(value!(typ),
-                1 => call!(image, packet_version) |
-                _ => map!(rest, |data| UserAttribute::Unknown {
-                    packet_version,
-                    typ,
-                    data: data.to_vec()
-                })
+fn image(packet_version: Version) -> impl Fn(&[u8]) -> IResult<&[u8], UserAttribute> {
+    move |input| {
+        // little endian, for historical reasons..
+        let (input, header_len) = le_u16(input)?;
+        let (input, header) = take(header_len - 2)(input)?;
+        // the actual image is the rest
+        let (input, img) = rest(input)?;
+        Ok((
+            input,
+            UserAttribute::Image {
+                packet_version,
+                header: header.to_vec(),
+                data: img.to_vec(),
+            },
         ))
-    >> ({
+    }
+}
+
+fn parse(packet_version: Version) -> impl Fn(&[u8]) -> IResult<&[u8], UserAttribute> {
+    move |input| {
+        let (input, len) = packet_length(input)?;
+        let (input, typ) = be_u8(input)?;
+        let (input, body) = take(len - 1)(input)?;
+
+        let (_, attr) = match typ {
+            1 => image(packet_version)(body)?,
+            _ => map(rest, |data: &[u8]| UserAttribute::Unknown {
+                packet_version,
+                typ,
+                data: data.to_vec(),
+            }).parse(body)?,
+        };
+
         debug!("attr with len {}", len);
-        attr
-    })
-));
+        Ok((input, attr))
+    }
+}
 
 impl Serialize for UserAttribute {
     fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<()> {
