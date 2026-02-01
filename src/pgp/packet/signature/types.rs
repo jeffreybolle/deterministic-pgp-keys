@@ -31,7 +31,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::complexity))]
+    #[allow(clippy::complexity)]
     pub fn new(
         packet_version: Version,
         version: SignatureVersion,

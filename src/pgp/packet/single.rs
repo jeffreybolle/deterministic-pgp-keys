@@ -1,5 +1,5 @@
 // comes from inside somewhere of nom
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::useless_let_if_seq))]
+#![allow(clippy::useless_let_if_seq)]
 
 use nom::{self, be_u32, be_u8, Err, IResult};
 use num_traits::FromPrimitive;

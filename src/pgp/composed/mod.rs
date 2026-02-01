@@ -6,7 +6,8 @@ mod shared;
 mod signature;
 
 pub use self::key::*;
-pub use self::message::*;
+#[cfg(test)]
+pub use self::message::Message;
 pub use self::shared::Deserializable;
 pub use self::signature::*;
 pub use self::signed_key::*;
