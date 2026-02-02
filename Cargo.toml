@@ -20,17 +20,17 @@ base64 = "0.22"
 bitfield = "0.17"
 block-padding = "0.3"
 blowfish = "0.9"
-byteorder = "^1.4"
+byteorder = "1.4"
 cast5 = "0.11"
 cfb-mode = "0.8"
-chrono = { version = "^0.4", default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 cipher = "0.4"
-crc24 = "^0.1"
+crc24 = "0.1"
 derive_builder = "0.20"
 des = "0.8"
 digest = "0.10"
-generic-array = "^0.14"
-hex = "^0.4"
+generic-array = "0.14"
+hex = "0.4"
 log = "0.4.6"
 md-5 = { version = "0.10", features = ["oid"] }
 nom = "8"
@@ -54,7 +54,7 @@ default-features = false
 features = ["std"]
 
 [dependencies.flate2]
-version = "^1.0"
+version = "1.0"
 default-features = false
 features = ["rust_backend"]
 
@@ -73,12 +73,12 @@ default-features = false
 features = ["alloc", "static_secrets"]
 
 [dev-dependencies]
-glob = "^0.3"
-hex-literal = "^0.3"
+glob = "0.3"
+hex-literal = "0.3"
 pretty_assertions = "1"
 pretty_env_logger = "0.5"
 rand_chacha = "0.3"
 rand_xorshift = "0.3"
-regex = "^1.5"
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
+regex = "1.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
