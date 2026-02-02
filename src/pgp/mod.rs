@@ -20,26 +20,6 @@
 )]
 #![allow(clippy::missing_const_for_fn, clippy::use_self, dead_code)]
 
-// #[macro_use]
-// extern crate nom;
-// #[macro_use]
-// extern crate num_derive;
-// #[macro_use]
-// extern crate generic_array;
-// #[macro_use]
-// extern crate log;
-// #[macro_use]
-// extern crate derive_builder;
-// #[macro_use]
-// extern crate bitfield;
-// #[macro_use]
-// extern crate smallvec;
-
-// #[cfg(test)]
-// #[macro_use]
-// extern crate pretty_assertions;
-//
-// public so it can be used in doc test
 #[macro_use]
 pub mod util;
 
